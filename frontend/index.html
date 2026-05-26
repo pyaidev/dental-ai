@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental Plaque Analyzer</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🦷 Анализ зубного налёта</h1>
+            <p class="subtitle">Загрузите фотографии зубов для автоматического анализа гигиены</p>
+        </header>
+
+        <form id="analysisForm" enctype="multipart/form-data">
+            <!-- Clinic Info -->
+            <fieldset>
+                <legend>Клиника</legend>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="clinic_name">Название клиники</label>
+                        <input type="text" id="clinic_name" name="clinic_name" placeholder="Стоматология">
+                    </div>
+                    <div class="form-group">
+                        <label for="clinic_phone">Телефон</label>
+                        <input type="tel" id="clinic_phone" name="clinic_phone" placeholder="+7 (___) ___-__-__">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label for="clinic_address">Адрес</label>
+                        <input type="text" id="clinic_address" name="clinic_address" placeholder="г. Москва, ул. ...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="clinic_logo">Логотип клиники</label>
+                    <input type="file" id="clinic_logo" name="clinic_logo" accept="image/*">
+                </div>
+            </fieldset>
+
+            <!-- Doctor Info -->
+            <fieldset>
+                <legend>Врач</legend>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="doctor_fio">ФИО врача</label>
+                        <input type="text" id="doctor_fio" name="doctor_fio" placeholder="Иванова Мария Петровна">
+                    </div>
+                    <div class="form-group">
+                        <label for="doctor_position">Должность</label>
+                        <input type="text" id="doctor_position" name="doctor_position" value="Гигиенист-стоматологический" placeholder="Гигиенист">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Patient Info -->
+            <fieldset>
+                <legend>Пациент</legend>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="patient_fio">ФИО пациента *</label>
+                        <input type="text" id="patient_fio" name="patient_fio" required placeholder="Петров Иван Сергеевич">
+                    </div>
+                    <div class="form-group">
+                        <label for="card_number">№ мед. карты *</label>
+                        <input type="text" id="card_number" name="card_number" required placeholder="123">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="patient_dob">Дата рождения</label>
+                        <input type="date" id="patient_dob" name="patient_dob">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Ortho Status -->
+            <fieldset>
+                <legend>Ортопедический статус</legend>
+                <div class="checkbox-row">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="has_braces" name="has_braces" value="true">
+                        <span>Брекеты</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="has_implants" name="has_implants" value="true">
+                        <span>Импланты</span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <!-- Photo Upload -->
+            <fieldset>
+                <legend>Фотографии зубов *</legend>
+                <div class="photos-upload">
+                    <div class="photo-drop" data-name="photo_right">
+                        <input type="file" name="photo_right" accept="image/*" required>
+                        <div class="drop-content">
+                            <div class="drop-icon">📷</div>
+                            <div class="drop-text">Правая сторона</div>
+                        </div>
+                        <img class="preview" alt="">
+                    </div>
+                    <div class="photo-drop" data-name="photo_front">
+                        <input type="file" name="photo_front" accept="image/*" required>
+                        <div class="drop-content">
+                            <div class="drop-icon">📷</div>
+                            <div class="drop-text">Фронтальная</div>
+                        </div>
+                        <img class="preview" alt="">
+                    </div>
+                    <div class="photo-drop" data-name="photo_left">
+                        <input type="file" name="photo_left" accept="image/*" required>
+                        <div class="drop-content">
+                            <div class="drop-icon">📷</div>
+                            <div class="drop-text">Левая сторона</div>
+                        </div>
+                        <img class="preview" alt="">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Doctor Comment -->
+            <fieldset>
+                <legend>Комментарий врача</legend>
+                <textarea id="doctor_comment" name="doctor_comment" rows="3" placeholder="Дополнительные заметки..."></textarea>
+            </fieldset>
+
+            <button type="submit" id="submitBtn" class="btn-submit">
+                <span class="btn-text">Анализировать</span>
+                <span class="btn-loading" style="display:none;">Анализ... ⏳</span>
+            </button>
+        </form>
+
+        <!-- Results Section -->
+        <div id="results" class="results-section" style="display:none;">
+            <h2>Результаты анализа</h2>
+
+            <!-- Overlay Images -->
+            <div class="results-photos">
+                <div class="result-photo">
+                    <img id="overlay_right" alt="Right overlay">
+                    <div class="photo-label">Правая (<span id="pct_right">0</span>%)</div>
+                </div>
+                <div class="result-photo">
+                    <img id="overlay_front" alt="Front overlay">
+                    <div class="photo-label">Фронт (<span id="pct_front">0</span>%)</div>
+                </div>
+                <div class="result-photo">
+                    <img id="overlay_left" alt="Left overlay">
+                    <div class="photo-label">Левая (<span id="pct_left">0</span>%)</div>
+                </div>
+            </div>
+
+            <!-- Overall -->
+            <div class="overall-result">
+                <div class="overall-pct">
+                    <span id="pct_overall">0</span>%
+                </div>
+                <div class="overall-label">общий налёт</div>
+            </div>
+
+            <!-- Indices -->
+            <div class="indices-row">
+                <div class="index-card">
+                    <div class="index-val" id="idx_fedorov">0</div>
+                    <div class="index-name">Фёдорова-Володкиной</div>
+                    <div class="index-interp" id="idx_fedorov_text"></div>
+                </div>
+                <div class="index-card">
+                    <div class="index-val" id="idx_api">0%</div>
+                    <div class="index-name">API Lange</div>
+                    <div class="index-interp" id="idx_api_text"></div>
+                </div>
+                <div class="index-card">
+                    <div class="index-val" id="idx_ohis">0</div>
+                    <div class="index-name">Грин-Вермиллиона</div>
+                    <div class="index-interp" id="idx_ohis_text"></div>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="recs-block">
+                <h3>Рекомендации</h3>
+                <pre id="recommendations_text"></pre>
+            </div>
+
+            <!-- Download PDF -->
+            <a id="downloadPdf" class="btn-download" href="#" download>📄 Скачать PDF отчёт</a>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

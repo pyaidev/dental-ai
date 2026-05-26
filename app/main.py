@@ -1,0 +1,64 @@
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from app.database import init_db, SessionLocal
+from app.models import AdminUser
+from app.routers import analysis, reports, auth, dashboard, patients, corrections, statistics
+from app.routers.auth import hash_password
+
+app = FastAPI(title="Odonta Index AI", version="1.0.0")
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type", "Authorization"],
+)
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/results", StaticFiles(directory="results"), name="results")
+
+app.include_router(auth.router, prefix="/api", tags=["auth"])
+app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
+app.include_router(analysis.router, prefix="/api", tags=["analysis"])
+app.include_router(reports.router, prefix="/api", tags=["reports"])
+app.include_router(patients.router, prefix="/api", tags=["patients"])
+app.include_router(corrections.router, prefix="/api", tags=["corrections"])
+app.include_router(statistics.router, prefix="/api", tags=["statistics"])
+
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
+    _create_default_admin()
+
+
+def _create_default_admin():
+    db = SessionLocal()
+    try:
+        existing = db.query(AdminUser).filter(AdminUser.username == "admin").first()
+        if not existing:
+            admin = AdminUser(
+                username="admin",
+                password_hash=hash_password("admin123"),
+                fio="Администратор",
+                role="admin",
+            )
+            db.add(admin)
+            db.commit()
+    finally:
+        db.close()

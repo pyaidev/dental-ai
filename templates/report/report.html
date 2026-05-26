@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="report.css">
+</head>
+<body>
+
+<!-- PAGE 1: Results -->
+<div class="page">
+    <!-- Header -->
+    <div class="header">
+        <div>
+            {% if logo_b64 %}
+            <img src="{{ logo_b64 }}" class="header-logo" alt="Logo">
+            {% endif %}
+        </div>
+        <div class="clinic-info">
+            {% if clinic %}
+            <div class="clinic-name">{{ clinic.name }}</div>
+            <div>{{ clinic.address or '' }}</div>
+            <div>{{ clinic.phone or '' }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Title -->
+    <div class="report-title">Отчёт о гигиене полости рта</div>
+
+    <!-- Info -->
+    <div class="info-row">
+        <div class="info-block">
+            <div><label>Дата обследования:</label> {{ date }}</div>
+            {% if doctor %}
+            <div><label>ФИО врача:</label> {{ doctor.fio }}</div>
+            <div><label>Должность:</label> {{ doctor.position or '' }}</div>
+            {% endif %}
+        </div>
+        <div class="info-block">
+            <div><label>ФИО пациента:</label> {{ patient.fio }}</div>
+            <div><label>Дата рождения:</label> {{ patient.date_of_birth or '' }}</div>
+            <div><label>Мед. карта:</label> {{ patient.card_number }}</div>
+        </div>
+    </div>
+
+    <!-- Photos -->
+    <div class="photos-section">
+        <h2>Фотографии зубов</h2>
+        <div class="photos-grid">
+            <div class="photo-item">
+                {% if photo_right_b64 %}
+                <img src="{{ photo_right_b64 }}" alt="Right">
+                {% endif %}
+                <div class="photo-label">Правая сторона</div>
+            </div>
+            <div class="photo-item">
+                {% if photo_front_b64 %}
+                <img src="{{ photo_front_b64 }}" alt="Front">
+                {% endif %}
+                <div class="photo-label">Фронтальная</div>
+            </div>
+            <div class="photo-item">
+                {% if photo_left_b64 %}
+                <img src="{{ photo_left_b64 }}" alt="Left">
+                {% endif %}
+                <div class="photo-label">Левая сторона</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section">
+        <h2>Результаты анализа</h2>
+        <div class="results-grid">
+            <!-- Plaque percentage -->
+            <div class="plaque-circle">
+                <div class="severity-badge" style="background-color: {{ severity_color }}">{{ severity }}</div>
+                <div class="circle-value">{{ analysis.plaque_pct_overall|round(0)|int }}%</div>
+                <div class="circle-label">налёта</div>
+                <div style="font-size: 9px; color: #888; margin-top: 5px;">
+                    Фронт: {{ analysis.plaque_pct_front }}% &bull;
+                    Правая: {{ analysis.plaque_pct_right }}% &bull;
+                    Левая: {{ analysis.plaque_pct_left }}%
+                </div>
+            </div>
+
+            <!-- Indices -->
+            <div class="indices-grid">
+                <!-- Fedorov-Volodkina -->
+                <div class="index-card">
+                    <div class="index-value">
+                        {{ indices.fedorov_volodkina }}
+                        <span class="index-dot {% if indices.fedorov_volodkina <= 1.5 %}dot-good{% elif indices.fedorov_volodkina <= 2.0 %}dot-ok{% elif indices.fedorov_volodkina <= 3.4 %}dot-bad{% else %}dot-critical{% endif %}"></span>
+                    </div>
+                    <div class="index-name">Фёдорова-Володкиной</div>
+                    <div class="index-desc">Степень зубного налёта на передних зубах</div>
+                    <div class="index-scale">
+                        Хороший: 1.0–1.5<br>
+                        Удовл.: 1.6–2.0<br>
+                        Неудовл.: 2.1–2.5<br>
+                        Плохой: 2.6–3.4<br>
+                        Очень плохой: 3.5–5.0
+                    </div>
+                </div>
+
+                <!-- API Lange -->
+                <div class="index-card">
+                    <div class="index-value">
+                        {{ indices.api_lange }}%
+                        <span class="index-dot {% if indices.api_lange < 25 %}dot-good{% elif indices.api_lange < 40 %}dot-ok{% elif indices.api_lange < 70 %}dot-bad{% else %}dot-critical{% endif %}"></span>
+                    </div>
+                    <div class="index-name">API Lange</div>
+                    <div class="index-desc">Налёт в межзубных промежутках</div>
+                    <div class="index-scale">
+                        Хороший: &lt; 25%<br>
+                        Удовл.: 25–39%<br>
+                        Неудовл.: 40–69%<br>
+                        Плохой: 70–100%
+                    </div>
+                </div>
+
+                <!-- OHI-S -->
+                <div class="index-card">
+                    <div class="index-value">
+                        {{ indices.ohi_s }}
+                        <span class="index-dot {% if indices.ohi_s <= 0.6 %}dot-good{% elif indices.ohi_s <= 1.8 %}dot-ok{% else %}dot-critical{% endif %}"></span>
+                    </div>
+                    <div class="index-name">Грин-Вермиллиона</div>
+                    <div class="index-desc">Уровень налёта и зубного камня</div>
+                    <div class="index-scale">
+                        Хороший: 0.0–0.6<br>
+                        Удовл.: 0.7–1.8<br>
+                        Плохой: 1.9–3.0
+                    </div>
+                </div>
+
+                <!-- Silness-Löe -->
+                <div class="index-card">
+                    <div class="index-value">
+                        {{ indices.silness_loe }}
+                        <span class="index-dot {% if indices.silness_loe <= 0.9 %}dot-good{% elif indices.silness_loe <= 1.9 %}dot-ok{% else %}dot-critical{% endif %}"></span>
+                    </div>
+                    <div class="index-name">Silness–Löe</div>
+                    <div class="index-desc">Международный индекс зубного налёта</div>
+                    <div class="index-scale">
+                        Отличный: 0<br>
+                        Хороший: 0.1–0.9<br>
+                        Удовл.: 1.0–1.9<br>
+                        Неудовл.: 2.0–3.0
+                    </div>
+                </div>
+
+                <!-- PHP -->
+                <div class="index-card">
+                    <div class="index-value">
+                        {{ indices.php }}
+                        <span class="index-dot {% if indices.php <= 0.6 %}dot-good{% elif indices.php <= 1.6 %}dot-ok{% else %}dot-critical{% endif %}"></span>
+                    </div>
+                    <div class="index-name">PHP (Podshadley–Haley)</div>
+                    <div class="index-desc">Эффективность чистки зубов</div>
+                    <div class="index-scale">
+                        Отличный: 0<br>
+                        Хороший: 0.1–0.6<br>
+                        Удовл.: 0.7–1.6<br>
+                        Неудовл.: ≥1.7
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if analysis.has_braces or analysis.has_implants %}
+    <div style="margin-top: 10px; font-size: 10px; color: #666;">
+        <strong>Ортопедический статус:</strong>
+        {% if analysis.has_braces %}☑ Брекеты{% endif %}
+        {% if analysis.has_implants %}☑ Импланты{% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- PAGE 2: Recommendations -->
+<div class="page">
+    <div class="header">
+        <div>
+            {% if logo_b64 %}
+            <img src="{{ logo_b64 }}" class="header-logo" alt="Logo">
+            {% endif %}
+        </div>
+        <div class="clinic-info">
+            {% if clinic %}
+            <div class="clinic-name">{{ clinic.name }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="recommendations-section">
+        <h2>Рекомендации</h2>
+
+        <div class="next-visit-box">
+            <div class="next-visit-label">
+                Следующая<br>профессиональная<br>гигиена зубов:
+            </div>
+            <div>
+                <span class="next-visit-value">{{ next_visit_months }}</span>
+                <span class="next-visit-unit">
+                    {% if next_visit_months == 1 %}месяц{% elif next_visit_months < 5 %}месяца{% else %}месяцев{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="recommendations-text">{{ recommendations }}</div>
+    </div>
+
+    {% if analysis.doctor_comment %}
+    <div class="doctor-comment-section">
+        <h3>Комментарий врача</h3>
+        <div class="doctor-comment-text">{{ analysis.doctor_comment }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Overlay visualizations -->
+    <div class="photos-section" style="margin-top: 20px;">
+        <h2>Визуализация налёта</h2>
+        <div class="photos-grid">
+            <div class="photo-item">
+                {% if overlay_right_b64 %}
+                <img src="{{ overlay_right_b64 }}" alt="Right overlay">
+                {% endif %}
+                <div class="photo-label">Правая сторона</div>
+            </div>
+            <div class="photo-item">
+                {% if overlay_front_b64 %}
+                <img src="{{ overlay_front_b64 }}" alt="Front overlay">
+                {% endif %}
+                <div class="photo-label">Фронтальная</div>
+            </div>
+            <div class="photo-item">
+                {% if overlay_left_b64 %}
+                <img src="{{ overlay_left_b64 }}" alt="Left overlay">
+                {% endif %}
+                <div class="photo-label">Левая сторона</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code -->
+    <div style="margin-top: 20px; display: flex; align-items: center; gap: 15px;">
+        {% if qr_b64 %}
+        <img src="{{ qr_b64 }}" style="width: 80px; height: 80px;" alt="QR">
+        {% endif %}
+        <div style="font-size: 9px; color: #888;">
+            Отсканируйте QR-код<br>для просмотра отчёта онлайн
+        </div>
+    </div>
+
+    <div class="footer">
+        <div>Odonta Index AI — Автоматический анализ индексов гигиены полости рта</div>
+        <div class="disclaimer">Результаты расчёта не являются диагнозом или медицинской рекомендацией и не заменяют консультации с врачом.</div>
+    </div>
+</div>
+
+<!-- PAGE 3: History & Schedule -->
+{% if history|length > 1 or schedule %}
+<div class="page">
+    <div class="header">
+        <div>
+            {% if logo_b64 %}
+            <img src="{{ logo_b64 }}" class="header-logo" alt="Logo">
+            {% endif %}
+        </div>
+        <div class="clinic-info">
+            {% if clinic %}
+            <div class="clinic-name">{{ clinic.name }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if history|length > 1 %}
+    <!-- Visit History -->
+    <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 14px; margin-bottom: 10px;">История наблюдений</h2>
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+            <thead>
+                <tr style="background: #f1f5f9;">
+                    <th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Дата</th>
+                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #ddd;">Налёт %</th>
+                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #ddd;">Фёд.-Вол.</th>
+                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #ddd;">API</th>
+                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #ddd;">OHI-S</th>
+                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #ddd;">Silness-Löe</th>
+                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #ddd;">PHP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in history %}
+                <tr style="{% if loop.last %}font-weight: bold; background: #f0fdf4;{% endif %}">
+                    <td style="padding: 5px 10px; border-bottom: 1px solid #eee;">{{ h.date }}</td>
+                    <td style="padding: 5px 10px; text-align: center; border-bottom: 1px solid #eee;">{{ h.plaque_pct_overall }}%</td>
+                    <td style="padding: 5px 10px; text-align: center; border-bottom: 1px solid #eee;">{{ h.index_fedorov or '—' }}</td>
+                    <td style="padding: 5px 10px; text-align: center; border-bottom: 1px solid #eee;">{{ h.index_api_lange or '—' }}%</td>
+                    <td style="padding: 5px 10px; text-align: center; border-bottom: 1px solid #eee;">{{ h.index_ohi_s or '—' }}</td>
+                    <td style="padding: 5px 10px; text-align: center; border-bottom: 1px solid #eee;">{{ h.index_silness_loe or '—' }}</td>
+                    <td style="padding: 5px 10px; text-align: center; border-bottom: 1px solid #eee;">{{ h.index_php or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Dynamics bar chart -->
+        <div style="margin-top: 15px;">
+            {% for h in history %}
+            <div style="display: flex; align-items: center; margin-bottom: 4px; font-size: 9px;">
+                <span style="width: 70px;">{{ h.date }}</span>
+                <div style="flex: 1; background: #f1f5f9; border-radius: 3px; height: 14px; position: relative;">
+                    <div style="width: {{ h.plaque_pct_overall }}%; background: {% if h.plaque_pct_overall <= 10 %}#10b981{% elif h.plaque_pct_overall <= 30 %}#f59e0b{% elif h.plaque_pct_overall <= 50 %}#f97316{% else %}#ef4444{% endif %}; height: 100%; border-radius: 3px;"></div>
+                </div>
+                <span style="width: 40px; text-align: right; font-weight: bold;">{{ h.plaque_pct_overall }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if schedule %}
+    <!-- Visit Schedule -->
+    <div style="margin-top: 15px;">
+        <h2 style="font-size: 14px; margin-bottom: 10px;">Рекомендованный график посещений гигиениста</h2>
+        <p style="font-size: 9px; color: #888; margin-bottom: 10px;">При соблюдении графика посещений вы сможете избежать трат на лечение и проблем с зубами</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            {% for visit in schedule %}
+            <div style="flex: 1; min-width: 120px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: center;">
+                <div style="font-size: 8px; color: #888;">Визит {{ visit.number }}</div>
+                <div style="font-size: 12px; font-weight: bold; color: #0891b2; margin-top: 3px;">{{ visit.date }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <div>Odonta Index AI — Автоматический анализ индексов гигиены полости рта</div>
+        <div class="disclaimer">Результаты расчёта не являются диагнозом или медицинской рекомендацией и не заменяют консультации с врачом.</div>
+    </div>
+</div>
+{% endif %}
+
+</body>
+</html>

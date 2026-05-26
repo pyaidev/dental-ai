@@ -1,0 +1,351 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0f4f8;
+    color: #333;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 28px;
+    color: #00838f;
+}
+
+.subtitle {
+    color: #888;
+    margin-top: 5px;
+}
+
+/* Form */
+fieldset {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: white;
+}
+
+legend {
+    font-weight: 600;
+    font-size: 15px;
+    color: #00838f;
+    padding: 0 8px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 12px;
+}
+
+.form-group {
+    flex: 1;
+}
+
+.form-group.full {
+    flex: 1 1 100%;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="date"],
+textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: #00acc1;
+    box-shadow: 0 0 0 3px rgba(0, 172, 193, 0.1);
+}
+
+textarea {
+    resize: vertical;
+    width: 100%;
+}
+
+/* Checkboxes */
+.checkbox-row {
+    display: flex;
+    gap: 25px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #00acc1;
+}
+
+/* Photo Upload */
+.photos-upload {
+    display: flex;
+    gap: 12px;
+}
+
+.photo-drop {
+    flex: 1;
+    position: relative;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    cursor: pointer;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    transition: border-color 0.2s;
+}
+
+.photo-drop:hover {
+    border-color: #00acc1;
+}
+
+.photo-drop input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.drop-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #aaa;
+}
+
+.drop-icon {
+    font-size: 32px;
+    margin-bottom: 5px;
+}
+
+.drop-text {
+    font-size: 12px;
+}
+
+.photo-drop .preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+    z-index: 1;
+}
+
+.photo-drop.has-image .drop-content {
+    display: none;
+}
+
+.photo-drop.has-image .preview {
+    display: block;
+}
+
+/* Submit Button */
+.btn-submit {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: #00acc1;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-submit:hover {
+    background: #00838f;
+}
+
+.btn-submit:disabled {
+    background: #90caf9;
+    cursor: not-allowed;
+}
+
+/* Results */
+.results-section {
+    margin-top: 30px;
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.results-section h2 {
+    font-size: 20px;
+    color: #00838f;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.results-photos {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.result-photo {
+    flex: 1;
+    text-align: center;
+}
+
+.result-photo img {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.photo-label {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+}
+
+.overall-result {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.overall-pct {
+    font-size: 56px;
+    font-weight: bold;
+    color: #e53935;
+}
+
+.overall-label {
+    font-size: 14px;
+    color: #888;
+}
+
+.indices-row {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.index-card {
+    flex: 1;
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+}
+
+.index-val {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+}
+
+.index-name {
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 4px;
+    color: #555;
+}
+
+.index-interp {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.recs-block {
+    margin: 20px 0;
+}
+
+.recs-block h3 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.recs-block pre {
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    background: #fafafa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.btn-download {
+    display: block;
+    text-align: center;
+    padding: 14px;
+    background: #4caf50;
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 15px;
+    transition: background 0.2s;
+}
+
+.btn-download:hover {
+    background: #388e3c;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .form-row {
+        flex-direction: column;
+    }
+    .photos-upload {
+        flex-direction: column;
+    }
+    .photo-drop {
+        aspect-ratio: 16/9;
+    }
+    .results-photos {
+        flex-direction: column;
+    }
+    .indices-row {
+        flex-direction: column;
+    }
+}
