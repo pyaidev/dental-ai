@@ -9,6 +9,7 @@ services:
       - ./uploads:/app/uploads
       - ./results:/app/results
       - ./data:/app/data
+      - ./ml/runs:/app/ml/runs
     env_file:
       - .env
     restart: unless-stopped
@@ -23,4 +24,17 @@ services:
       - NEXT_PUBLIC_API_URL=http://backend:8000
     depends_on:
       - backend
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+      - frontend
     restart: unless-stopped
