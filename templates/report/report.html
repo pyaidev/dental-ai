@@ -218,29 +218,14 @@
     </div>
     {% endif %}
 
-    <!-- Overlay visualizations -->
-    <div class="photos-section" style="margin-top: 20px;">
-        <h2>Визуализация налёта</h2>
-        <div class="photos-grid">
-            <div class="photo-item">
-                {% if overlay_right_b64 %}
-                <img src="{{ overlay_right_b64 }}" alt="Right overlay">
-                {% endif %}
-                <div class="photo-label">Правая сторона</div>
-            </div>
-            <div class="photo-item">
-                {% if overlay_front_b64 %}
-                <img src="{{ overlay_front_b64 }}" alt="Front overlay">
-                {% endif %}
-                <div class="photo-label">Фронтальная</div>
-            </div>
-            <div class="photo-item">
-                {% if overlay_left_b64 %}
-                <img src="{{ overlay_left_b64 }}" alt="Left overlay">
-                {% endif %}
-                <div class="photo-label">Левая сторона</div>
-            </div>
+    <!-- Overlay mini-preview -->
+    <div style="margin-top: 10px;">
+        <div style="display: flex; gap: 4px;">
+            {% if overlay_right_b64 %}<img src="{{ overlay_right_b64 }}" style="flex:1; max-height:80px; object-fit:cover; border-radius:4px;">{% endif %}
+            {% if overlay_front_b64 %}<img src="{{ overlay_front_b64 }}" style="flex:1; max-height:80px; object-fit:cover; border-radius:4px;">{% endif %}
+            {% if overlay_left_b64 %}<img src="{{ overlay_left_b64 }}" style="flex:1; max-height:80px; object-fit:cover; border-radius:4px;">{% endif %}
         </div>
+        <div style="text-align:center; font-size:7px; color:#999; margin-top:2px;">Визуализация: красный — налёт, зелёный — чистая эмаль</div>
     </div>
 
     <!-- QR Code -->

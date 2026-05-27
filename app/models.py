@@ -18,6 +18,92 @@ class AdminUser(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class PatientQuestionnaire(Base):
+    __tablename__ = "questionnaires"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    # General
+    smoking: Mapped[bool] = mapped_column(Boolean, default=False)
+    diabetes: Mapped[bool] = mapped_column(Boolean, default=False)
+    pregnancy: Mapped[bool] = mapped_column(Boolean, default=False)
+    dry_mouth: Mapped[bool] = mapped_column(Boolean, default=False)
+    bruxism: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Hygiene
+    brushing_frequency: Mapped[str | None] = mapped_column(String(50))  # 1x, 2x, 3x, rarely
+    uses_interdental: Mapped[bool] = mapped_column(Boolean, default=False)
+    bleeding_gums: Mapped[bool] = mapped_column(Boolean, default=False)
+    sensitivity: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Aesthetics
+    wants_whitening: Mapped[bool] = mapped_column(Boolean, default=False)
+    satisfied_color: Mapped[bool] = mapped_column(Boolean, default=True)
+    bad_breath: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Extra
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    patient: Mapped["Patient"] = relationship(back_populates="questionnaires")
+
+
+class WhiteningCase(Base):
+    __tablename__ = "whitening_cases"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    tooth_type: Mapped[str] = mapped_column(String(50))  # tetracycline, fluorosis, healthy, after_braces
+    photo_before: Mapped[str | None] = mapped_column(String(500))
+    photo_after: Mapped[str | None] = mapped_column(String(500))
+    recommendations: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    patient: Mapped["Patient"] = relationship()
+
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("admin_users.id"), nullable=False)
+    plan: Mapped[str] = mapped_column(String(50))  # hygiene, hygiene_brushes, hygiene_perio, all
+    reports_total: Mapped[int] = mapped_column(Integer, default=0)
+    reports_used: Mapped[int] = mapped_column(Integer, default=0)
+    price_per_report: Mapped[float] = mapped_column(Float)  # 35, 40, 50, 60
+    payment_id: Mapped[str | None] = mapped_column(String(255))
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active, expired, pending
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    user: Mapped["AdminUser"] = relationship()
+
+    @property
+    def reports_remaining(self) -> int:
+        return max(self.reports_total - self.reports_used, 0)
+
+
+class InterdentalChart(Base):
+    __tablename__ = "interdental_charts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    data: Mapped[str] = mapped_column(Text)  # JSON: {tooth_pair: brush_size}
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    patient: Mapped["Patient"] = relationship()
+
+
+class PeriodontalChart(Base):
+    __tablename__ = "periodontal_charts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    data: Mapped[str] = mapped_column(Text)  # JSON: {tooth: {buccal: [pd1,pd2,pd3], lingual: [pd1,pd2,pd3], bleeding: bool, mobility: int}}
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    patient: Mapped["Patient"] = relationship()
+
+
 class Clinic(Base):
     __tablename__ = "clinics"
 
@@ -51,9 +137,12 @@ class Patient(Base):
     fio: Mapped[str] = mapped_column(String(255), nullable=False)
     date_of_birth: Mapped[str | None] = mapped_column(String(20))
     card_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    telegram_id: Mapped[str | None] = mapped_column(String(50))
+    phone: Mapped[str | None] = mapped_column(String(50))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     analyses: Mapped[list["Analysis"]] = relationship(back_populates="patient")
+    questionnaires: Mapped[list["PatientQuestionnaire"]] = relationship(back_populates="patient")
 
 
 class Analysis(Base):

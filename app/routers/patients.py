@@ -90,6 +90,30 @@ def patient_history(
     }
 
 
+@router.delete("/patients/{patient_id}")
+def delete_patient(
+    patient_id: int,
+    user: AdminUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    import os
+    analyses = db.query(Analysis).filter(Analysis.patient_id == patient_id).all()
+    for a in analyses:
+        for path in [a.photo_front, a.photo_right, a.photo_left,
+                     a.overlay_front, a.overlay_right, a.overlay_left, a.pdf_path]:
+            if path and os.path.exists(path):
+                os.remove(path)
+        db.delete(a)
+
+    db.delete(patient)
+    db.commit()
+    return {"ok": True, "message": "Пациент и все анализы удалены"}
+
+
 @router.delete("/analysis/{analysis_id}")
 def delete_analysis(
     analysis_id: int,

@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.database import init_db, SessionLocal
 from app.models import AdminUser
-from app.routers import analysis, reports, auth, dashboard, patients, corrections, statistics
+from app.routers import analysis, reports, auth, dashboard, patients, corrections, statistics, questionnaire, whitening, subscriptions, charts, reminders
 from app.routers.auth import hash_password
 
 app = FastAPI(title="Odonta Index AI", version="1.0.0")
@@ -41,6 +41,11 @@ app.include_router(reports.router, prefix="/api", tags=["reports"])
 app.include_router(patients.router, prefix="/api", tags=["patients"])
 app.include_router(corrections.router, prefix="/api", tags=["corrections"])
 app.include_router(statistics.router, prefix="/api", tags=["statistics"])
+app.include_router(questionnaire.router, prefix="/api", tags=["questionnaire"])
+app.include_router(whitening.router, prefix="/api", tags=["whitening"])
+app.include_router(subscriptions.router, prefix="/api", tags=["subscriptions"])
+app.include_router(charts.router, prefix="/api", tags=["charts"])
+app.include_router(reminders.router, prefix="/api", tags=["reminders"])
 
 
 @app.on_event("startup")

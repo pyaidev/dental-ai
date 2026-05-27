@@ -10,11 +10,12 @@ async def generate_recommendations(
     has_braces: bool = False,
     has_implants: bool = False,
     indices: dict | None = None,
+    questionnaire: dict | None = None,
 ) -> str:
     """Generate recommendations via YandexGPT or fallback to templates."""
     if settings.yandex_gpt_api_key and settings.yandex_gpt_folder_id:
         try:
-            return await _call_yandex_gpt(plaque_pct, zone_data, has_braces, has_implants, indices)
+            return await _call_yandex_gpt(plaque_pct, zone_data, has_braces, has_implants, indices, questionnaire)
         except Exception:
             pass
     return _template_recommendations(plaque_pct, zone_data, has_braces, has_implants)
@@ -26,22 +27,43 @@ async def _call_yandex_gpt(
     has_braces: bool,
     has_implants: bool,
     indices: dict | None,
+    questionnaire: dict | None = None,
 ) -> str:
-    prompt = f"""Ты — стоматолог-гигиенист. На основании результатов анализа зубного налёта составь краткие рекомендации для пациента на русском языке.
+    q_text = ""
+    if questionnaire:
+        q_parts = []
+        if questionnaire.get("smoking"): q_parts.append("курит")
+        if questionnaire.get("diabetes"): q_parts.append("диабет")
+        if questionnaire.get("pregnancy"): q_parts.append("беременность")
+        if questionnaire.get("dry_mouth"): q_parts.append("сухость во рту")
+        if questionnaire.get("bruxism"): q_parts.append("бруксизм")
+        if questionnaire.get("bleeding_gums"): q_parts.append("кровоточивость дёсен")
+        if questionnaire.get("sensitivity"): q_parts.append("чувствительность зубов")
+        if questionnaire.get("bad_breath"): q_parts.append("запах изо рта")
+        if questionnaire.get("wants_whitening"): q_parts.append("хочет отбеливание")
+        freq_map = {"rarely": "редко", "1x": "1 раз в день", "2x": "2 раза в день", "3x": "3 раза в день"}
+        freq = freq_map.get(questionnaire.get("brushing_frequency", ""), "")
+        if freq: q_parts.append(f"чистит зубы {freq}")
+        if questionnaire.get("uses_interdental"): q_parts.append("использует ёршики/нить")
+        if q_parts:
+            q_text = f"\n- Анкета пациента: {', '.join(q_parts)}"
+
+    prompt = f"""Ты — стоматолог-гигиенист. На основании результатов анализа зубного налёта и анкеты пациента составь персональные рекомендации на русском языке.
 
 Результаты анализа:
 - Общий процент налёта: {plaque_pct}%
 - Распределение по зонам: {json.dumps(zone_data, ensure_ascii=False)}
 - Брекеты: {"да" if has_braces else "нет"}
 - Импланты: {"да" if has_implants else "нет"}
-{f"- Индексы: {json.dumps(indices, ensure_ascii=False)}" if indices else ""}
+{f"- Индексы: {json.dumps(indices, ensure_ascii=False)}" if indices else ""}{q_text}
 
 Составь рекомендации по пунктам:
 1. Оценка уровня гигиены (1-2 предложения)
 2. Проблемные зоны
-3. Рекомендуемые средства гигиены (щётка, паста, ополаскиватель, ёршики, нить)
-4. Техника чистки
-5. Рекомендуемый срок следующей профессиональной гигиены"""
+3. Конкретные средства гигиены с названиями брендов (щётка, паста, ополаскиватель, ёршики, нить, ирригатор — подбери под клиническую картину и анкету пациента)
+4. Техника чистки (учитывай особенности пациента)
+5. Рекомендуемый срок следующей профессиональной гигиены
+{("6. Рекомендации по отбеливанию" if questionnaire and questionnaire.get("wants_whitening") else "")}"""
 
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     headers = {
@@ -130,3 +152,53 @@ def _template_recommendations(
     lines.append(f"\n5. Следующая профессиональная гигиена: через {next_visit}.")
 
     return "\n".join(lines)
+
+
+async def generate_whitening_recommendations(tooth_type: str, patient_name: str = "") -> str:
+    """Generate whitening recommendations based on tooth type."""
+    type_names = {
+        "tetracycline": "тетрациклиновые зубы",
+        "fluorosis": "флюороз",
+        "healthy": "здоровые зубы",
+        "after_braces": "после снятия брекетов",
+    }
+    type_name = type_names.get(tooth_type, tooth_type)
+
+    if settings.yandex_gpt_api_key and settings.yandex_gpt_folder_id:
+        try:
+            prompt = f"""Ты — стоматолог, специалист по отбеливанию. Пациент обратился за отбеливанием.
+Тип зубов: {type_name}
+
+Составь рекомендации:
+1. Можно ли проводить отбеливание для данного типа зубов
+2. Рекомендуемый метод отбеливания (кабинетное, домашнее, комбинированное)
+3. Подготовка к отбеливанию
+4. Ожидаемый результат
+5. Уход после отбеливания
+6. Противопоказания и риски"""
+
+            url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
+            headers = {"Authorization": f"Api-Key {settings.yandex_gpt_api_key}", "Content-Type": "application/json"}
+            body = {
+                "modelUri": f"gpt://{settings.yandex_gpt_folder_id}/yandexgpt/latest",
+                "completionOptions": {"stream": False, "temperature": 0.3, "maxTokens": 1000},
+                "messages": [
+                    {"role": "system", "text": "Ты — опытный стоматолог, специалист по эстетической стоматологии и отбеливанию."},
+                    {"role": "user", "text": prompt},
+                ],
+            }
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(url, headers=headers, json=body)
+                resp.raise_for_status()
+                return resp.json()["result"]["alternatives"][0]["message"]["text"]
+        except Exception:
+            pass
+
+    # Template fallback
+    templates = {
+        "tetracycline": "Тетрациклиновые зубы требуют особого подхода. Стандартное отбеливание малоэффективно. Рекомендуется: внутреннее отбеливание или виниры. Консультация обязательна.",
+        "fluorosis": "При флюорозе отбеливание возможно, но результат зависит от степени поражения. Рекомендуется кабинетное отбеливание с предварительной реминерализацией.",
+        "healthy": "Здоровые зубы отлично поддаются отбеливанию. Рекомендуется кабинетное отбеливание (ZOOM, Beyond) или домашнее с каппами. Результат: осветление на 4-8 тонов.",
+        "after_braces": "После снятия брекетов рекомендуется подождать 2-4 недели. Сначала провести профессиональную гигиену, затем отбеливание. Домашнее отбеливание с каппами — оптимальный вариант.",
+    }
+    return templates.get(tooth_type, "Консультация стоматолога по отбеливанию.")

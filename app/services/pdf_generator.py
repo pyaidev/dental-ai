@@ -98,7 +98,7 @@ def generate_pdf(
         severity_color = "#F44336"
 
     # QR code to online report
-    report_url = f"{base_url}/report/{analysis.id}"
+    report_url = f"{base_url}/report/{analysis.access_token}" if analysis.access_token else f"{base_url}/report/{analysis.id}"
     qr_b64 = generate_qr_base64(report_url)
 
     # Visit schedule

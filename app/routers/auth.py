@@ -25,6 +25,15 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=1, max_length=200)
 
 
+class RegisterRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=6, max_length=200)
+    fio: str = Field(..., min_length=2, max_length=255)
+    clinic_name: str = Field("", max_length=255)
+    phone: str = Field("", max_length=50)
+    position: str = Field("Гигиенист-стоматологический", max_length=255)
+
+
 class LoginResponse(BaseModel):
     token: str
     user: dict
@@ -99,6 +108,29 @@ def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     db.commit()
 
     logger.info(f"Login success: user='{user.username}' ip={client_ip}")
+    return LoginResponse(
+        token=token,
+        user={"id": user.id, "username": user.username, "fio": user.fio, "role": user.role},
+    )
+
+
+@router.post("/auth/register")
+def register(body: RegisterRequest, db: Session = Depends(get_db)):
+    existing = db.query(AdminUser).filter(AdminUser.username == body.username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Этот логин уже занят")
+
+    user = AdminUser(
+        username=body.username,
+        password_hash=hash_password(body.password),
+        fio=body.fio,
+        role="doctor",
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    token = create_token(user.id)
     return LoginResponse(
         token=token,
         user={"id": user.id, "username": user.username, "fio": user.fio, "role": user.role},

@@ -107,8 +107,23 @@ async def analyze(
         "silness_loe": indices.silness_loe,
         "php": indices.php,
     }
+    # Get questionnaire if exists
+    from app.models import PatientQuestionnaire
+    q_data = None
+    patient_check = db.query(Patient).filter(Patient.card_number == card_number).first()
+    if patient_check:
+        q = db.query(PatientQuestionnaire).filter(PatientQuestionnaire.patient_id == patient_check.id).first()
+        if q:
+            q_data = {
+                "smoking": q.smoking, "diabetes": q.diabetes, "pregnancy": q.pregnancy,
+                "dry_mouth": q.dry_mouth, "bruxism": q.bruxism, "brushing_frequency": q.brushing_frequency,
+                "uses_interdental": q.uses_interdental, "bleeding_gums": q.bleeding_gums,
+                "sensitivity": q.sensitivity, "wants_whitening": q.wants_whitening,
+                "satisfied_color": q.satisfied_color, "bad_breath": q.bad_breath,
+            }
+
     recs = await generate_recommendations(
-        pct_overall, zone_data_all.get("front", {}), has_braces, has_implants, indices_dict
+        pct_overall, zone_data_all.get("front", {}), has_braces, has_implants, indices_dict, q_data
     )
 
     # Get or create clinic
@@ -209,20 +224,33 @@ async def get_analysis(analysis_id: int, user: AdminUser = Depends(get_current_u
     analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
+    from app.services.index_calculator import interpret_fedorov, interpret_api, interpret_ohi_s, interpret_silness_loe, interpret_php
+    patient = db.query(Patient).filter(Patient.id == analysis.patient_id).first()
     return {
         "id": analysis.id,
+        "patient_fio": patient.fio if patient else "",
+        "card_number": patient.card_number if patient else "",
         "plaque_pct_front": analysis.plaque_pct_front,
         "plaque_pct_right": analysis.plaque_pct_right,
         "plaque_pct_left": analysis.plaque_pct_left,
         "plaque_pct_overall": analysis.plaque_pct_overall,
         "index_fedorov": analysis.index_fedorov,
+        "index_fedorov_text": interpret_fedorov(analysis.index_fedorov) if analysis.index_fedorov else "",
         "index_api_lange": analysis.index_api_lange,
+        "index_api_text": interpret_api(analysis.index_api_lange) if analysis.index_api_lange else "",
         "index_ohi_s": analysis.index_ohi_s,
+        "index_ohi_s_text": interpret_ohi_s(analysis.index_ohi_s) if analysis.index_ohi_s else "",
+        "index_silness_loe": analysis.index_silness_loe,
+        "index_silness_loe_text": interpret_silness_loe(analysis.index_silness_loe) if analysis.index_silness_loe else "",
+        "index_php": analysis.index_php,
+        "index_php_text": interpret_php(analysis.index_php) if analysis.index_php else "",
         "recommendations": analysis.recommendations,
         "overlay_front": analysis.overlay_front,
         "overlay_right": analysis.overlay_right,
         "overlay_left": analysis.overlay_left,
         "pdf_url": f"/api/report/{analysis.id}/pdf" if analysis.pdf_path else None,
+        "access_token": analysis.access_token or "",
+        "public_url": f"/report/{analysis.access_token}" if analysis.access_token else "",
     }
 
 
