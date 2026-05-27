@@ -4,7 +4,7 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-2.0-0 \
     libffi-dev \
     libcairo2 \
     && rm -rf /var/lib/apt/lists/*
@@ -13,13 +13,13 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir bcrypt python-jose[cryptography] qrcode[pil] ultralytics
 
 COPY app/ app/
 COPY templates/ templates/
 COPY run.py .
-COPY .env.example .env
 
-RUN mkdir -p uploads results data
+RUN mkdir -p uploads results data ml/runs/dental_plaque_v1/weights
 
 EXPOSE 8000
 
