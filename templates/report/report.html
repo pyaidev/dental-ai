@@ -89,7 +89,7 @@
                 <!-- Fedorov-Volodkina -->
                 <div class="index-card">
                     <div class="index-value">
-                        {{ indices.fedorov_volodkina }}
+                        {{ "%.1f"|format(indices.fedorov_volodkina) }}
                         <span class="index-dot {% if indices.fedorov_volodkina <= 1.5 %}dot-good{% elif indices.fedorov_volodkina <= 2.0 %}dot-ok{% elif indices.fedorov_volodkina <= 3.4 %}dot-bad{% else %}dot-critical{% endif %}"></span>
                     </div>
                     <div class="index-name">Фёдорова-Володкиной</div>
@@ -106,7 +106,7 @@
                 <!-- API Lange -->
                 <div class="index-card">
                     <div class="index-value">
-                        {{ indices.api_lange }}%
+                        {{ "%.1f"|format(indices.api_lange) }}%
                         <span class="index-dot {% if indices.api_lange < 25 %}dot-good{% elif indices.api_lange < 40 %}dot-ok{% elif indices.api_lange < 70 %}dot-bad{% else %}dot-critical{% endif %}"></span>
                     </div>
                     <div class="index-name">API Lange</div>
@@ -122,7 +122,7 @@
                 <!-- OHI-S -->
                 <div class="index-card">
                     <div class="index-value">
-                        {{ indices.ohi_s }}
+                        {{ "%.1f"|format(indices.ohi_s) }}
                         <span class="index-dot {% if indices.ohi_s <= 0.6 %}dot-good{% elif indices.ohi_s <= 1.8 %}dot-ok{% else %}dot-critical{% endif %}"></span>
                     </div>
                     <div class="index-name">Грин-Вермиллиона</div>
@@ -137,7 +137,7 @@
                 <!-- Silness-Löe -->
                 <div class="index-card">
                     <div class="index-value">
-                        {{ indices.silness_loe }}
+                        {{ "%.1f"|format(indices.silness_loe) }}
                         <span class="index-dot {% if indices.silness_loe <= 0.9 %}dot-good{% elif indices.silness_loe <= 1.9 %}dot-ok{% else %}dot-critical{% endif %}"></span>
                     </div>
                     <div class="index-name">Silness–Löe</div>
@@ -153,7 +153,7 @@
                 <!-- PHP -->
                 <div class="index-card">
                     <div class="index-value">
-                        {{ indices.php }}
+                        {{ "%.1f"|format(indices.php) }}
                         <span class="index-dot {% if indices.php <= 0.6 %}dot-good{% elif indices.php <= 1.6 %}dot-ok{% else %}dot-critical{% endif %}"></span>
                     </div>
                     <div class="index-name">PHP (Podshadley–Haley)</div>

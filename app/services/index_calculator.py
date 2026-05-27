@@ -46,13 +46,13 @@ def calc_fedorov_volodkina(front_pct: float) -> float:
     if front_pct <= 0:
         return 1.0
     elif front_pct <= 25:
-        return 1.0 + (front_pct / 25) * 1.0
+        return round(1.0 + (front_pct / 25) * 1.0, 1)
     elif front_pct <= 50:
-        return 2.0 + ((front_pct - 25) / 25) * 1.0
+        return round(2.0 + ((front_pct - 25) / 25) * 1.0, 1)
     elif front_pct <= 75:
-        return 3.0 + ((front_pct - 50) / 25) * 1.0
+        return round(3.0 + ((front_pct - 50) / 25) * 1.0, 1)
     else:
-        return 4.0 + ((min(front_pct, 100) - 75) / 25) * 1.0
+        return round(4.0 + ((min(front_pct, 100) - 75) / 25) * 1.0, 1)
 
 
 def interpret_fedorov(value: float) -> str:
