@@ -11,7 +11,7 @@ class AdminUser(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     fio: Mapped[str | None] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(50), default="admin")
     last_login: Mapped[datetime | None] = mapped_column(DateTime)
@@ -90,6 +90,7 @@ class Analysis(Base):
     doctor_comment: Mapped[str | None] = mapped_column(Text)
 
     pdf_path: Mapped[str | None] = mapped_column(String(500))
+    access_token: Mapped[str | None] = mapped_column(String(64), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     patient: Mapped[Patient] = relationship(back_populates="analyses")

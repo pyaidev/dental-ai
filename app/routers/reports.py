@@ -17,7 +17,8 @@ async def download_pdf(analysis_id: int, db: Session = Depends(get_db)):
     if not analysis or not analysis.pdf_path:
         raise HTTPException(status_code=404, detail="Report not found")
     safe_path = Path(analysis.pdf_path).resolve()
-    safe_dir = Path("results").resolve()
+    from app.config import settings
+    safe_dir = Path(settings.results_dir).resolve()
     if not str(safe_path).startswith(str(safe_dir)):
         raise HTTPException(status_code=403, detail="Access denied")
     if not safe_path.exists():
@@ -29,10 +30,10 @@ async def download_pdf(analysis_id: int, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/report/{analysis_id}/public")
-async def public_report(analysis_id: int, db: Session = Depends(get_db)):
-    """Public endpoint for QR code — no auth required."""
-    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+@router.get("/report/{token}/public")
+async def public_report(token: str, db: Session = Depends(get_db)):
+    """Public endpoint for QR code — uses secure access token, not sequential ID."""
+    analysis = db.query(Analysis).filter(Analysis.access_token == token).first()
     if not analysis:
         raise HTTPException(status_code=404, detail="Report not found")
 

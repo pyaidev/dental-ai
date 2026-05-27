@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -14,11 +14,11 @@ router = APIRouter()
 
 
 class CorrectionRequest(BaseModel):
-    plaque_pct_front: float | None = None
-    plaque_pct_right: float | None = None
-    plaque_pct_left: float | None = None
-    recommendations: str | None = None
-    doctor_comment: str | None = None
+    plaque_pct_front: float | None = Field(None, ge=0, le=100)
+    plaque_pct_right: float | None = Field(None, ge=0, le=100)
+    plaque_pct_left: float | None = Field(None, ge=0, le=100)
+    recommendations: str | None = Field(None, max_length=5000)
+    doctor_comment: str | None = Field(None, max_length=5000)
 
 
 @router.put("/analysis/{analysis_id}/correct")

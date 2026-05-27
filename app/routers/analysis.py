@@ -1,4 +1,5 @@
 import json
+import secrets
 import uuid
 from io import BytesIO
 from pathlib import Path
@@ -165,6 +166,7 @@ async def analyze(
         zone_data=json.dumps(zone_data_all, ensure_ascii=False),
         recommendations=recs,
         doctor_comment=doctor_comment,
+        access_token=secrets.token_urlsafe(32),
     )
     db.add(analysis)
     db.commit()
@@ -197,6 +199,8 @@ async def analyze(
         "overlay_right": results["right"].overlay_path,
         "overlay_left": results["left"].overlay_path,
         "pdf_url": f"/api/report/{analysis.id}/pdf",
+        "access_token": analysis.access_token,
+        "public_url": f"/report/{analysis.access_token}",
     }
 
 
