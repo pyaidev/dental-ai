@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -88,3 +88,25 @@ def patient_history(
         },
         "history": history,
     }
+
+
+@router.delete("/analysis/{analysis_id}")
+def delete_analysis(
+    analysis_id: int,
+    user: AdminUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    import os
+    for path in [analysis.photo_front, analysis.photo_right, analysis.photo_left,
+                 analysis.overlay_front, analysis.overlay_right, analysis.overlay_left,
+                 analysis.pdf_path]:
+        if path and os.path.exists(path):
+            os.remove(path)
+
+    db.delete(analysis)
+    db.commit()
+    return {"ok": True, "message": "Анализ удалён"}
