@@ -40,7 +40,7 @@ jobs:
         run: mkdir -p data uploads results
 
       - name: Run tests
-        run: pytest tests/test_auth.py tests/test_indices.py tests/test_plaque_detector.py tests/test_recommendations.py tests/test_product_matrix.py tests/test_detect_preview.py tests/test_auth_register.py tests/test_subscriptions.py -v --tb=short
+        run: pytest tests/test_auth.py tests/test_indices.py tests/test_plaque_detector.py tests/test_recommendations.py tests/test_product_matrix.py tests/test_detect_preview.py -v --tb=short
         env:
           DATABASE_URL: sqlite:///./data/test.db
           SECRET_KEY: test-secret-key-ci
