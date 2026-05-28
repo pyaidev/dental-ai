@@ -44,14 +44,14 @@ def test_register_empty_username(client):
     assert resp.status_code == 422
 
 
+def test_change_password_wrong_old(client, auth_headers):
+    resp = client.post("/api/auth/change-password", headers=auth_headers,
+        json={"old_password": "wrong_pass", "new_password": "newpass123"})
+    assert resp.status_code == 400
+
+
 def test_change_password(client, auth_headers):
     resp = client.post("/api/auth/change-password", headers=auth_headers,
         json={"old_password": "admin123", "new_password": "newpass123"})
     assert resp.status_code == 200
     assert resp.json()["ok"] == True
-
-
-def test_change_password_wrong_old(client, auth_headers):
-    resp = client.post("/api/auth/change-password", headers=auth_headers,
-        json={"old_password": "wrong_pass", "new_password": "newpass123"})
-    assert resp.status_code == 400
