@@ -40,7 +40,7 @@ jobs:
         run: mkdir -p data uploads results
 
       - name: Run tests
-        run: pytest tests/ -v --tb=short -x
+        run: pytest tests/ -v --tb=short
         env:
           DATABASE_URL: sqlite:///./data/test.db
           SECRET_KEY: test-secret-key-ci
@@ -59,7 +59,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend-next
-        run: npm ci
+        run: npm install
 
       - name: Build
         working-directory: frontend-next
