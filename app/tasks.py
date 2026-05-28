@@ -69,3 +69,62 @@ def backup_database():
         old.unlink()
 
     return {"backup": str(dst), "size": dst.stat().st_size}
+
+
+@celery.task(name="app.tasks.run_analysis_async")
+def run_analysis_async(task_id: str, photo_paths: dict, analysis_id: int, user_id: int):
+    """Run plaque detection + PDF generation in background."""
+    from app.routers.async_analysis import update_progress
+    from app.services.plaque_detector import detect_plaque
+    from app.services.index_calculator import calculate_indices
+    from app.services.pdf_generator import generate_pdf
+    from app.models import Analysis, Patient, Doctor, Clinic
+    from app.config import settings
+    from pathlib import Path
+
+    db = SessionLocal()
+    try:
+        update_progress(task_id, "processing", 10, "Анализ фотографий...")
+
+        results = {}
+        for i, (name, path) in enumerate(photo_paths.items()):
+            overlay_path = str(Path(settings.results_dir) / f"{task_id}_{name}_overlay.jpg")
+            results[name] = detect_plaque(path, overlay_path)
+            update_progress(task_id, "processing", 20 + i * 20, f"Обработка: {name}")
+
+        update_progress(task_id, "processing", 70, "Расчёт индексов...")
+
+        pct_front = results["front"].plaque_percent
+        pct_right = results["right"].plaque_percent
+        pct_left = results["left"].plaque_percent
+        pct_overall = round((pct_front + pct_right + pct_left) / 3, 1)
+
+        indices = calculate_indices(pct_front, pct_right, pct_left)
+
+        update_progress(task_id, "processing", 85, "Генерация PDF...")
+
+        analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+        if analysis:
+            analysis.plaque_pct_front = pct_front
+            analysis.plaque_pct_right = pct_right
+            analysis.plaque_pct_left = pct_left
+            analysis.plaque_pct_overall = pct_overall
+            analysis.index_fedorov = indices.fedorov_volodkina
+            analysis.index_api_lange = indices.api_lange
+            analysis.index_ohi_s = indices.ohi_s
+            analysis.index_silness_loe = indices.silness_loe
+            analysis.index_php = indices.php
+            analysis.overlay_front = results["front"].overlay_path
+            analysis.overlay_right = results["right"].overlay_path
+            analysis.overlay_left = results["left"].overlay_path
+            db.commit()
+
+        update_progress(task_id, "completed", 100, "Готово!", {
+            "analysis_id": analysis_id,
+            "plaque_pct_overall": pct_overall,
+        })
+
+    except Exception as e:
+        update_progress(task_id, "error", 0, str(e))
+    finally:
+        db.close()

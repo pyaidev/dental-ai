@@ -38,6 +38,26 @@ class PatientQuestionnaire(Base):
     wants_whitening: Mapped[bool] = mapped_column(Boolean, default=False)
     satisfied_color: Mapped[bool] = mapped_column(Boolean, default=True)
     bad_breath: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Oral status
+    crowns_veneers: Mapped[bool] = mapped_column(Boolean, default=False)
+    crowding: Mapped[bool] = mapped_column(Boolean, default=False)
+    white_spots: Mapped[bool] = mapped_column(Boolean, default=False)
+    food_impaction: Mapped[bool] = mapped_column(Boolean, default=False)
+    pigmentation: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Extended hygiene
+    uses_irrigator: Mapped[bool] = mapped_column(Boolean, default=False)
+    cleans_tongue: Mapped[bool] = mapped_column(Boolean, default=False)
+    electric_brush: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Habits
+    coffee_tea: Mapped[bool] = mapped_column(Boolean, default=False)
+    sweets: Mapped[bool] = mapped_column(Boolean, default=False)
+    acidic_drinks: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Medical
+    casein_allergy: Mapped[bool] = mapped_column(Boolean, default=False)
+    gum_disease: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Preferences
+    prefers_premium: Mapped[bool] = mapped_column(Boolean, default=False)
+    prefers_budget: Mapped[bool] = mapped_column(Boolean, default=False)
     # Extra
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -138,7 +158,9 @@ class Patient(Base):
     date_of_birth: Mapped[str | None] = mapped_column(String(20))
     card_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     telegram_id: Mapped[str | None] = mapped_column(String(50))
+    max_id: Mapped[str | None] = mapped_column(String(50))
     phone: Mapped[str | None] = mapped_column(String(50))
+    checkin_token: Mapped[str | None] = mapped_column(String(50))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     analyses: Mapped[list["Analysis"]] = relationship(back_populates="patient")

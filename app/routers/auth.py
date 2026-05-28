@@ -137,6 +137,20 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     )
 
 
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6, max_length=200)
+
+
+@router.post("/auth/change-password")
+def change_password(body: ChangePasswordRequest, user: AdminUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(body.old_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Неверный текущий пароль")
+    user.password_hash = hash_password(body.new_password)
+    db.commit()
+    return {"ok": True, "message": "Пароль изменён"}
+
+
 @router.get("/auth/me")
 def me(user: AdminUser = Depends(get_current_user)):
     return {"id": user.id, "username": user.username, "fio": user.fio, "role": user.role}

@@ -1,7 +1,85 @@
 import httpx
 import json
+from pathlib import Path
 
 from app.config import settings
+
+# Load product matrix
+_matrix_path = Path(__file__).parent.parent / "data" / "product_matrix.json"
+PRODUCT_MATRIX = {}
+if _matrix_path.exists():
+    PRODUCT_MATRIX = json.loads(_matrix_path.read_text(encoding="utf-8"))
+
+
+def _get_matching_rules(indices: dict, has_braces: bool, has_implants: bool, questionnaire: dict | None) -> str:
+    """Match clinical data to product matrix rules."""
+    rules = PRODUCT_MATRIX.get("matrix", [])
+    safety = PRODUCT_MATRIX.get("safety_rules", [])
+    matched = []
+
+    for rule in rules:
+        idx = rule.get("index", "")
+        level = rule.get("level", "")
+
+        # Match by index values
+        if "Фёдорова" in idx and indices:
+            fv = indices.get("fedorov_volodkina", 0)
+            if "0–1" in level and fv <= 1:
+                matched.append(rule)
+            elif "1.1–2" in level and 1.1 <= fv <= 2:
+                matched.append(rule)
+            elif ">2" in level and fv > 2:
+                matched.append(rule)
+
+        if "API" in idx and indices:
+            api = indices.get("api_lange", 0)
+            if "<25" in level and api < 25:
+                matched.append(rule)
+            elif "25–70" in level and 25 <= api <= 70:
+                matched.append(rule)
+            elif ">70" in level and api > 70:
+                matched.append(rule)
+
+        if "Брекеты" in idx and has_braces:
+            matched.append(rule)
+        if "Имплантат" in idx and has_implants:
+            matched.append(rule)
+
+        # Questionnaire matches
+        if questionnaire:
+            if "Xerostomia" in idx and questionnaire.get("dry_mouth"):
+                matched.append(rule)
+            if "Halitosis" in idx and questionnaire.get("bad_breath"):
+                matched.append(rule)
+            if "Чувствительность" in idx and questionnaire.get("sensitivity"):
+                matched.append(rule)
+            if "Bleeding" in idx and questionnaire.get("bleeding_gums"):
+                matched.append(rule)
+
+    # Build text
+    lines = []
+    for r in matched[:6]:  # Top 6 matches
+        lines.append(f"- {r['index']} ({r['level']}): {r['protocol']} → {r['brands']}: {r['products']}")
+
+    # Safety rules
+    safety_text = []
+    for s in safety:
+        condition = s["if"].lower()
+        if "allergy casein" in condition and questionnaire and questionnaire.get("notes", "").lower().find("аллерг") >= 0:
+            safety_text.append(f"⚠ {s['then']}")
+        if "implant" in condition and has_implants:
+            safety_text.append(f"⚠ {s['then']}")
+        if "braces" in condition and has_braces:
+            safety_text.append(f"⚠ {s['then']}")
+        if "xerostomia" in condition and questionnaire and questionnaire.get("dry_mouth"):
+            safety_text.append(f"⚠ {s['then']}")
+        if "sensitivity" in condition and questionnaire and questionnaire.get("sensitivity"):
+            safety_text.append(f"⚠ {s['then']}")
+
+    result = "\n".join(lines)
+    if safety_text:
+        result += "\n\nSafety:\n" + "\n".join(safety_text)
+    return result
 
 
 async def generate_recommendations(
@@ -48,22 +126,37 @@ async def _call_yandex_gpt(
         if q_parts:
             q_text = f"\n- Анкета пациента: {', '.join(q_parts)}"
 
-    prompt = f"""Ты — стоматолог-гигиенист. На основании результатов анализа зубного налёта и анкеты пациента составь персональные рекомендации на русском языке.
+    # Get matched product rules
+    matched_rules = _get_matching_rules(indices or {}, has_braces, has_implants, questionnaire)
 
-Результаты анализа:
+    prompt = f"""Ты — стоматолог-гигиенист Odonta Index AI. На основании результатов анализа, анкеты пациента и базы продуктов составь персональные рекомендации на русском языке.
+
+РЕЗУЛЬТАТЫ АНАЛИЗА:
 - Общий процент налёта: {plaque_pct}%
 - Распределение по зонам: {json.dumps(zone_data, ensure_ascii=False)}
 - Брекеты: {"да" if has_braces else "нет"}
 - Импланты: {"да" if has_implants else "нет"}
 {f"- Индексы: {json.dumps(indices, ensure_ascii=False)}" if indices else ""}{q_text}
 
+ПОДОБРАННЫЕ ПРОТОКОЛЫ И ПРОДУКТЫ:
+{matched_rules}
+
+ПРАВИЛЬНАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ ГИГИЕНЫ:
+1. Межзубная очистка (ёршики / нить)
+2. Ирригатор (по показаниям)
+3. Основная чистка зубов щёткой
+4. Очистка языка
+5. Ополаскиватель / moisturizing care
+
 Составь рекомендации по пунктам:
-1. Оценка уровня гигиены (1-2 предложения)
+1. Оценка уровня гигиены (1-2 предложения, добавь мотивирующую фразу)
 2. Проблемные зоны
-3. Конкретные средства гигиены с названиями брендов (щётка, паста, ополаскиватель, ёршики, нить, ирригатор — подбери под клиническую картину и анкету пациента)
-4. Техника чистки (учитывай особенности пациента)
-5. Рекомендуемый срок следующей профессиональной гигиены
-{("6. Рекомендации по отбеливанию" if questionnaire and questionnaire.get("wants_whitening") else "")}"""
+3. Последовательность домашней гигиены (по шагам)
+4. Конкретные средства с названиями брендов и моделей (щётка, паста, ополаскиватель, ёршики, нить, ирригатор — используй продукты из ПОДОБРАННЫХ ПРОТОКОЛОВ)
+5. Техника чистки (учитывай особенности пациента)
+6. Чего избегать (ошибки пациента)
+7. Рекомендуемый срок следующей профессиональной гигиены
+{("8. Рекомендации по отбеливанию" if questionnaire and questionnaire.get("wants_whitening") else "")}"""
 
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     headers = {

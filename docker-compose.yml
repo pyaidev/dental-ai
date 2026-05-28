@@ -1,4 +1,12 @@
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
   backend:
     build:
       context: .
@@ -12,6 +20,50 @@ services:
       - ./ml/runs:/app/ml/runs
     env_file:
       - .env
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=2
+    volumes:
+      - ./uploads:/app/uploads
+      - ./results:/app/results
+      - ./data:/app/data
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - backend
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: celery -A app.celery_app beat --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - backend
+    restart: unless-stopped
+
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: python bot.py
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - backend
     restart: unless-stopped
 
   frontend:
@@ -38,3 +90,6 @@ services:
       - backend
       - frontend
     restart: unless-stopped
+
+volumes:
+  redis_data:

@@ -9,6 +9,7 @@ from app.config import settings
 from app.models import WhiteningCase, Patient, AdminUser
 from app.routers.auth import get_current_user
 from app.routers.analysis import validate_upload
+from app.routers.subscriptions import check_permission
 from app.services.recommendations import generate_whitening_recommendations
 
 router = APIRouter()
@@ -22,6 +23,9 @@ async def create_whitening(
     user: AdminUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if not check_permission(user.id, "whitening", db):
+        raise HTTPException(status_code=403, detail="Ваш тариф не включает отбеливание. Перейдите на «Полный пакет».")
+
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")

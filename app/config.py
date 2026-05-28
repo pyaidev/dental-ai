@@ -9,6 +9,15 @@ class Settings(BaseSettings):
     upload_dir: str = "./uploads"
     results_dir: str = "./results"
     secret_key: str = "change-me-in-production"
+    telegram_bot_token: str = ""
+    webapp_url: str = "https://odontaindex.ru"
+    tinkoff_terminal_key: str = ""
+    tinkoff_password: str = ""
+    max_bot_token: str = ""
+    smtp_email: str = ""
+    smtp_password: str = ""
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
 
     # HSV ranges for plaque detection (blue-purple-pink stain)
     # Calibrated from client photos with dental plaque indicator

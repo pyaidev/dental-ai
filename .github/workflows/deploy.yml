@@ -10,6 +10,7 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    needs: []
 
     steps:
       - uses: actions/checkout@v4
@@ -22,8 +23,18 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /opt/dental-ai
-            git pull origin main
-            docker compose down
-            docker compose up -d --build
-            docker system prune -f
+            git pull origin main || true
+
+            # Sync files
+            source .venv/bin/activate
+            pip install -q -r requirements.txt 2>/dev/null
+
+            # Rebuild frontend
+            cd frontend-next
+            npm ci --silent
+            NEXT_PUBLIC_API_URL=https://odontaindex.ru npx next build
+
+            # Restart services
+            sudo systemctl restart dental-backend dental-frontend dental-celery dental-celery-beat
+
             echo "Deploy complete: $(date)"

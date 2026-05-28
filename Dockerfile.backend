@@ -13,13 +13,14 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir bcrypt python-jose[cryptography] qrcode[pil] ultralytics
+RUN pip install --no-cache-dir bcrypt 'python-jose[cryptography]' 'qrcode[pil]' ultralytics celery redis
 
 COPY app/ app/
 COPY templates/ templates/
 COPY run.py .
+COPY bot.py .
 
-RUN mkdir -p uploads results data ml/runs/dental_plaque_v1/weights
+RUN mkdir -p uploads results data data/backups ml/runs/dental_plaque_v1/weights
 
 EXPOSE 8000
 

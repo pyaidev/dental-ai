@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.database import init_db, SessionLocal
 from app.models import AdminUser
-from app.routers import analysis, reports, auth, dashboard, patients, corrections, statistics, questionnaire, whitening, subscriptions, charts, reminders
+from app.routers import analysis, reports, auth, dashboard, patients, corrections, statistics, questionnaire, whitening, subscriptions, charts, reminders, detect_preview, gamification, self_checkin, async_analysis, admin_dashboard, notifications
 from app.routers.auth import hash_password
 
 app = FastAPI(title="Odonta Index AI", version="1.0.0")
@@ -12,7 +12,12 @@ app = FastAPI(title="Odonta Index AI", version="1.0.0")
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://odontaindex.ru",
+        "https://dashboard.odontaindex.ru",
+    ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type", "Authorization"],
@@ -46,6 +51,12 @@ app.include_router(whitening.router, prefix="/api", tags=["whitening"])
 app.include_router(subscriptions.router, prefix="/api", tags=["subscriptions"])
 app.include_router(charts.router, prefix="/api", tags=["charts"])
 app.include_router(reminders.router, prefix="/api", tags=["reminders"])
+app.include_router(detect_preview.router, prefix="/api", tags=["detect"])
+app.include_router(gamification.router, prefix="/api", tags=["gamification"])
+app.include_router(self_checkin.router, prefix="/api", tags=["checkin"])
+app.include_router(async_analysis.router, prefix="/api", tags=["async"])
+app.include_router(admin_dashboard.router, prefix="/api", tags=["admin"])
+app.include_router(notifications.router, prefix="/api", tags=["notifications"])
 
 
 @app.on_event("startup")

@@ -1,38 +1,136 @@
-"""Telegram bot for patient reminders."""
+"""Telegram bot for patient reminders with phone verification."""
 
+import logging
 import httpx
-from datetime import datetime, timedelta
+from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models import Analysis, Patient
 
+logger = logging.getLogger(__name__)
 
 BOT_TOKEN = getattr(settings, "telegram_bot_token", "")
+WEBAPP_URL = getattr(settings, "webapp_url", "https://odontaindex.ru")
 
 
-async def send_message(chat_id: str, text: str) -> bool:
-    """Send message via Telegram Bot API."""
+async def send_message(chat_id: str, text: str, reply_markup: dict | None = None) -> bool:
     if not BOT_TOKEN:
         return False
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload: dict = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.post(url, json={
-                "chat_id": chat_id,
-                "text": text,
-                "parse_mode": "HTML",
-            })
+            resp = await client.post(url, json=payload)
             return resp.status_code == 200
-    except Exception:
+    except Exception as e:
+        logger.error(f"Telegram send error: {e}")
         return False
 
 
-async def send_reminder(patient: Patient, reminder_type: str, doctor_name: str = "", custom_text: str = ""):
-    """Send hygiene reminder to patient.
+async def request_phone(chat_id: str) -> bool:
+    """Ask user to share phone number for verification."""
+    return await send_message(
+        chat_id,
+        "🦷 <b>Odonta Index AI</b>\n\n"
+        "Для получения напоминаний о гигиене, пожалуйста, поделитесь номером телефона.\n\n"
+        "Нажмите кнопку ниже 👇",
+        reply_markup={
+            "keyboard": [[{
+                "text": "📱 Отправить номер телефона",
+                "request_contact": True,
+            }]],
+            "resize_keyboard": True,
+            "one_time_keyboard": True,
+        },
+    )
 
-    reminder_type: 'controlled' (2 weeks, high index) or 'planned' (regular schedule)
-    """
+
+async def handle_start(chat_id: str, user_name: str) -> bool:
+    """Handle /start command."""
+    return await request_phone(chat_id)
+
+
+async def handle_contact(chat_id: str, phone: str, db: Session) -> bool:
+    """Handle shared contact — link patient by phone number."""
+    # Normalize phone: remove +, spaces, dashes
+    clean_phone = phone.replace("+", "").replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+    # Try find patient by phone
+    patient = None
+    patients = db.query(Patient).all()
+    for p in patients:
+        if p.phone:
+            p_clean = p.phone.replace("+", "").replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+            if p_clean == clean_phone or p_clean.endswith(clean_phone[-10:]) or clean_phone.endswith(p_clean[-10:]):
+                patient = p
+                break
+
+    if patient:
+        patient.telegram_id = str(chat_id)
+        db.commit()
+        await send_message(
+            chat_id,
+            f"✅ <b>Вы подключены!</b>\n\n"
+            f"Пациент: {patient.fio}\n"
+            f"Карта: {patient.card_number}\n\n"
+            f"Теперь вы будете получать:\n"
+            f"• Напоминания о плановой гигиене\n"
+            f"• Контрольные визиты\n"
+            f"• Результаты анализов\n\n"
+            f"Для отключения напишите /stop",
+            reply_markup={"remove_keyboard": True},
+        )
+        return True
+    else:
+        await send_message(
+            chat_id,
+            "❌ Пациент с таким номером не найден.\n\n"
+            "Убедитесь, что врач внёс ваш номер телефона в карту пациента, "
+            "и попробуйте ещё раз: /start",
+            reply_markup={"remove_keyboard": True},
+        )
+        return False
+
+
+async def handle_stop(chat_id: str, db: Session) -> bool:
+    """Handle /stop — unlink patient."""
+    patient = db.query(Patient).filter(Patient.telegram_id == str(chat_id)).first()
+    if patient:
+        patient.telegram_id = None
+        db.commit()
+        await send_message(chat_id, "🔕 Уведомления отключены. Для повторного подключения напишите /start")
+        return True
+    await send_message(chat_id, "Вы не были подключены.")
+    return False
+
+
+async def handle_status(chat_id: str, db: Session) -> bool:
+    """Handle /status — show last analysis."""
+    patient = db.query(Patient).filter(Patient.telegram_id == str(chat_id)).first()
+    if not patient:
+        await send_message(chat_id, "Вы не подключены. Напишите /start")
+        return False
+
+    last = db.query(Analysis).filter(Analysis.patient_id == patient.id).order_by(Analysis.created_at.desc()).first()
+    if not last:
+        await send_message(chat_id, f"Пациент: {patient.fio}\nАнализов пока нет.")
+        return True
+
+    report_link = f"{WEBAPP_URL}/report/{last.access_token}" if last.access_token else ""
+    await send_message(
+        chat_id,
+        f"📊 <b>Последний анализ</b>\n\n"
+        f"Пациент: {patient.fio}\n"
+        f"Дата: {last.created_at.strftime('%d.%m.%Y') if last.created_at else '—'}\n"
+        f"Налёт: <b>{last.plaque_pct_overall}%</b>\n"
+        f"{'🔗 Отчёт: ' + report_link if report_link else ''}",
+    )
+    return True
+
+
+async def send_reminder(patient: Patient, reminder_type: str, doctor_name: str = "", custom_text: str = ""):
     if not patient.telegram_id:
         return False
 
@@ -40,61 +138,43 @@ async def send_reminder(patient: Patient, reminder_type: str, doctor_name: str =
         text = (
             f"🦷 <b>Контролируемая гигиена</b>\n\n"
             f"Здравствуйте, {patient.fio}!\n\n"
-            f"По результатам последнего анализа вам рекомендована контрольная проверка гигиены "
-            f"через 2 недели.\n\n"
-            f"{custom_text}\n\n"
-            f"Врач: {doctor_name}\n"
-            f"Запишитесь на приём: odontaindex.ru"
+            f"По результатам последнего анализа рекомендован контрольный визит.\n\n"
+            f"{custom_text}\n"
+            f"{'Врач: ' + doctor_name if doctor_name else ''}"
         )
     else:
         text = (
             f"🦷 <b>Плановая гигиена</b>\n\n"
             f"Здравствуйте, {patient.fio}!\n\n"
-            f"Подошло время плановой профессиональной гигиены полости рта. "
-            f"Врач ждёт вас!\n\n"
-            f"{custom_text}\n\n"
-            f"Врач: {doctor_name}\n"
-            f"Запишитесь на приём: odontaindex.ru"
+            f"Подошло время плановой профессиональной гигиены. Врач ждёт вас!\n\n"
+            f"{custom_text}\n"
+            f"{'Врач: ' + doctor_name if doctor_name else ''}"
         )
 
     return await send_message(patient.telegram_id, text)
 
 
 def get_patients_for_reminder(db: Session) -> list[dict]:
-    """Get patients who need reminders."""
     results = []
-    patients = db.query(Patient).all()
+    patients = db.query(Patient).filter(Patient.telegram_id.isnot(None)).all()
 
     for patient in patients:
-        last_analysis = (
-            db.query(Analysis)
-            .filter(Analysis.patient_id == patient.id)
-            .order_by(Analysis.created_at.desc())
-            .first()
-        )
-        if not last_analysis or not last_analysis.created_at:
+        last = db.query(Analysis).filter(Analysis.patient_id == patient.id).order_by(Analysis.created_at.desc()).first()
+        if not last or not last.created_at:
             continue
 
-        days_since = (datetime.utcnow() - last_analysis.created_at).days
-        plaque = last_analysis.plaque_pct_overall or 0
+        days = (datetime.utcnow() - last.created_at).days
+        plaque = last.plaque_pct_overall or 0
 
-        # Controlled: 2 weeks for high index
-        if plaque > 30 and 13 <= days_since <= 15:
-            results.append({
-                "patient": patient,
-                "type": "controlled",
-                "plaque": plaque,
-                "days_since": days_since,
-            })
-
-        # Planned: based on plaque level
-        if plaque <= 10 and 175 <= days_since <= 185:  # ~6 months
-            results.append({"patient": patient, "type": "planned", "plaque": plaque, "days_since": days_since})
-        elif plaque <= 25 and 115 <= days_since <= 125:  # ~4 months
-            results.append({"patient": patient, "type": "planned", "plaque": plaque, "days_since": days_since})
-        elif plaque <= 50 and 55 <= days_since <= 65:  # ~2 months
-            results.append({"patient": patient, "type": "planned", "plaque": plaque, "days_since": days_since})
-        elif plaque > 50 and 25 <= days_since <= 35:  # ~1 month
-            results.append({"patient": patient, "type": "planned", "plaque": plaque, "days_since": days_since})
+        if plaque > 30 and 13 <= days <= 15:
+            results.append({"patient": patient, "type": "controlled", "plaque": plaque, "days_since": days})
+        if plaque <= 10 and 175 <= days <= 185:
+            results.append({"patient": patient, "type": "planned", "plaque": plaque, "days_since": days})
+        elif plaque <= 25 and 115 <= days <= 125:
+            results.append({"patient": patient, "type": "planned", "plaque": plaque, "days_since": days})
+        elif plaque <= 50 and 55 <= days <= 65:
+            results.append({"patient": patient, "type": "planned", "plaque": plaque, "days_since": days})
+        elif plaque > 50 and 25 <= days <= 35:
+            results.append({"patient": patient, "type": "planned", "plaque": plaque, "days_since": days})
 
     return results

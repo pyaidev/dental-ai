@@ -1,5 +1,7 @@
+import json
 from datetime import datetime, timedelta
 
+import redis
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -7,6 +9,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Analysis, Patient, AdminUser
 from app.routers.auth import get_current_user
+
+try:
+    _redis = redis.Redis(host="localhost", port=6379, db=2, decode_responses=True)
+    _redis.ping()
+except Exception:
+    _redis = None
+
+CACHE_TTL = 300  # 5 minutes
 
 router = APIRouter()
 
@@ -16,6 +26,11 @@ def get_dashboard(
     user: AdminUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Try cache first
+    if _redis:
+        cached = _redis.get(f"dashboard:{user.id}")
+        if cached:
+            return json.loads(cached)
     total_analyses = db.query(func.count(Analysis.id)).scalar() or 0
     total_patients = db.query(func.count(Patient.id)).scalar() or 0
 
@@ -47,10 +62,19 @@ def get_dashboard(
             "created_at": a.created_at.isoformat() if a.created_at else "",
         })
 
-    return {
+    result = {
         "total_analyses": total_analyses,
         "total_patients": total_patients,
         "avg_plaque": avg_plaque,
         "today_analyses": today_analyses,
         "recent_analyses": recent_list,
     }
+
+    # Cache result
+    if _redis:
+        try:
+            _redis.setex(f"dashboard:{user.id}", CACHE_TTL, json.dumps(result))
+        except Exception:
+            pass
+
+    return result

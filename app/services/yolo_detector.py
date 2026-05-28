@@ -24,11 +24,19 @@ def is_yolo_available() -> bool:
     return YOLO_MODEL_PATH.exists()
 
 
+_cached_model = None
+
+def _get_model():
+    global _cached_model
+    if _cached_model is None:
+        from ultralytics import YOLO
+        _cached_model = YOLO(str(YOLO_MODEL_PATH))
+    return _cached_model
+
+
 def detect_plaque_yolo(image_path: str, overlay_save_path: str) -> YoloPlaqueResult:
     """Detect plaque using trained YOLO segmentation model."""
-    from ultralytics import YOLO
-
-    model = YOLO(str(YOLO_MODEL_PATH))
+    model = _get_model()
 
     # Load image
     ext = Path(image_path).suffix.lower()

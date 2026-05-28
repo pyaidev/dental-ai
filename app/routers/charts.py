@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import InterdentalChart, PeriodontalChart, Patient, AdminUser
 from app.routers.auth import get_current_user
+from app.routers.subscriptions import check_permission
 
 router = APIRouter()
 
@@ -25,6 +26,9 @@ def save_interdental(
     user: AdminUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if not check_permission(user.id, "interdental", db):
+        raise HTTPException(status_code=403, detail="Ваш тариф не включает ёршикограмму. Перейдите на тариф «Гигиена + Ёршики» или выше.")
+
     patient = db.query(Patient).filter(Patient.id == body.patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -79,6 +83,9 @@ def save_periodontal(
     user: AdminUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if not check_permission(user.id, "periodontal", db):
+        raise HTTPException(status_code=403, detail="Ваш тариф не включает пародонтограмму. Перейдите на тариф «Гигиена + Ёршики + Пародонтограмма» или выше.")
+
     patient = db.query(Patient).filter(Patient.id == body.patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")

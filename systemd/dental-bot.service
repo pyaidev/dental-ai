@@ -1,0 +1,14 @@
+[Unit]
+Description=Odonta Index AI Telegram Bot
+After=network.target dental-backend.service
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/dental-ai
+ExecStart=/opt/dental-ai/.venv/bin/python bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+path: /Users/nurmuhammad/ai/dental-ai/ml/retrain_dataset
+train: train/images
+val: val/images
+
+names:
+  0: plaque
+  1: clean_tooth

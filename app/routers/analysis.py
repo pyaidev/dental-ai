@@ -46,6 +46,7 @@ router = APIRouter()
 async def analyze(
     patient_fio: str = Form(...),
     patient_dob: str = Form(""),
+    patient_phone: str = Form(""),
     card_number: str = Form(...),
     doctor_fio: str = Form(""),
     doctor_position: str = Form(""),
@@ -84,6 +85,14 @@ async def analyze(
 
     # Run plaque detection on each photo
     results = {}
+    # Auto-detect braces/implants from front photo
+    from app.services.braces_detector import detect_braces_implants
+    auto_detect = detect_braces_implants(photo_paths["front"])
+    if auto_detect["has_braces"] and not has_braces:
+        has_braces = True
+    if auto_detect["has_implants"] and not has_implants:
+        has_implants = True
+
     zone_data_all = {}
     for name, path in photo_paths.items():
         overlay_path = str(Path(settings.results_dir) / f"{analysis_id}_{name}_overlay.jpg")
@@ -152,9 +161,12 @@ async def analyze(
     # Get or create patient
     patient = db.query(Patient).filter(Patient.card_number == card_number).first()
     if not patient:
-        patient = Patient(fio=patient_fio, date_of_birth=patient_dob, card_number=card_number)
+        patient = Patient(fio=patient_fio, date_of_birth=patient_dob, card_number=card_number, phone=patient_phone if patient_phone else None)
         db.add(patient)
         db.flush()
+    else:
+        if patient_phone:
+            patient.phone = patient_phone
 
     # Create analysis record
     analysis = Analysis(
@@ -187,6 +199,19 @@ async def analyze(
     db.commit()
     db.refresh(analysis)
 
+    # Deduct from subscription (skip for admin — unlimited)
+    if user.role != "admin":
+        from app.models import Subscription
+        active_sub = db.query(Subscription).filter(
+            Subscription.user_id == user.id,
+            Subscription.status == "active",
+        ).order_by(Subscription.created_at.desc()).first()
+        if active_sub and active_sub.reports_total > active_sub.reports_used:
+            active_sub.reports_used += 1
+            if active_sub.reports_used >= active_sub.reports_total:
+                active_sub.status = "expired"
+            db.commit()
+
     # Generate PDF
     pdf_path = str(Path(settings.results_dir) / f"{analysis_id}_report.pdf")
     generate_pdf(analysis, patient, doctor, clinic, indices, pdf_path)
@@ -216,6 +241,7 @@ async def analyze(
         "pdf_url": f"/api/report/{analysis.id}/pdf",
         "access_token": analysis.access_token,
         "public_url": f"/report/{analysis.access_token}",
+        "auto_detect": auto_detect,
     }
 
 

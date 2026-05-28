@@ -1,0 +1,1215 @@
+{
+  "matrix": [
+    {
+      "index": "Фёдорова-Володкиной",
+      "level": "0–1",
+      "interpretation": "Хорошая гигиена",
+      "protocol": "Поддерживающая профилактика",
+      "brands": "Curaprox, Apadent, TePe",
+      "products": "CS5460, Enzycal, CPS Prime XS, Apadent Total Care, Premio, TePe Pink/Orange",
+      "extra": "Recall 6 мес"
+    },
+    {
+      "index": "Фёдорова-Володкиной",
+      "level": "1.1–2",
+      "interpretation": "Умеренный налёт",
+      "protocol": "Усиление anti-plaque hygiene",
+      "brands": "Curasept, President, TePe, Jetpik",
+      "products": "ADS 205, Daycare, President Classic/Antibacterial, TePe Orange/Blue, Jetpik JP50",
+      "extra": "Recall 3–4 мес"
+    },
+    {
+      "index": "Фёдорова-Володкиной",
+      "level": ">2",
+      "interpretation": "Высокий biofilm",
+      "protocol": "Intensive plaque protocol",
+      "brands": "Curasept, Jetpik, TePe, Curaprox",
+      "products": "ADS 212/220, Implant Pro, JP200, TePe Green/Purple, CPS Strong",
+      "extra": "AirFlow + мотивация"
+    },
+    {
+      "index": "API Lange",
+      "level": "<25%",
+      "interpretation": "Хорошая interdental hygiene",
+      "protocol": "Поддержка",
+      "brands": "TePe, Curaprox, Pesitro",
+      "products": "TePe Pink, CPS Prime, Pesitro XS",
+      "extra": "Recall"
+    },
+    {
+      "index": "API Lange",
+      "level": "25–70%",
+      "interpretation": "Недостаточная межзубная гигиена",
+      "protocol": "Interdental protocol",
+      "brands": "TePe, Pesitro, Jetpik",
+      "products": "TePe Orange/Blue/Yellow, Pesitro S/M/L, Jetpik floss",
+      "extra": "Interdental training"
+    },
+    {
+      "index": "API Lange",
+      "level": ">70%",
+      "interpretation": "Критическая interdental plaque",
+      "protocol": "Intensive interdental care",
+      "brands": "Jetpik, TePe, Curasept",
+      "products": "JP200, TePe Green/Purple, ADS rinse",
+      "extra": "Professional hygiene"
+    },
+    {
+      "index": "Bleeding Index",
+      "level": "10–30%",
+      "interpretation": "Gingivitis",
+      "protocol": "Anti-inflammatory protocol",
+      "brands": "Curasept, President, Biorepair",
+      "products": "ADS 212, Active Plus, Peribioma",
+      "extra": "Professional hygiene"
+    },
+    {
+      "index": "Bleeding Index",
+      "level": ">30%",
+      "interpretation": "Severe gingivitis",
+      "protocol": "Perio protocol",
+      "brands": "Curasept, TePe, Curaprox",
+      "products": "ADS 220, TePe Green/Purple, Perio Plus",
+      "extra": "Perio consult"
+    },
+    {
+      "index": "Брекеты",
+      "level": "low plaque",
+      "interpretation": "Ortho maintenance",
+      "protocol": "Ortho-care",
+      "brands": "Curaprox, TePe, Pesitro, Elmex",
+      "products": "Ortho Kit, Compact Tuft, Pesitro XS/S, Elmex Gelée",
+      "extra": "Recall 3 мес"
+    },
+    {
+      "index": "Брекеты",
+      "level": "high plaque",
+      "interpretation": "White spot risk",
+      "protocol": "Intensive ortho protocol",
+      "brands": "GC, Elmex, TePe, SPLAT",
+      "products": "MI Paste Plus, Tooth Mousse, Gelée, TePe Ortho, SPLAT Junior",
+      "extra": "Remineralization"
+    },
+    {
+      "index": "Имплантат",
+      "level": "healthy",
+      "interpretation": "Maintenance",
+      "protocol": "Implant support",
+      "brands": "Curasept, TePe, Jetpik",
+      "products": "Implant Pro, Implant Care, Angle Brush, JP200",
+      "extra": "Recall 4 мес"
+    },
+    {
+      "index": "Имплантат",
+      "level": "bleeding",
+      "interpretation": "Peri-implant mucositis",
+      "protocol": "Anti-inflammatory implant protocol",
+      "brands": "Curasept, Jetpik, Biorepair",
+      "products": "ADS 212, JP200, Peribioma",
+      "extra": "Implant hygiene visit"
+    },
+    {
+      "index": "Xerostomia",
+      "level": "mild",
+      "interpretation": "Dry mouth",
+      "protocol": "Saliva support",
+      "brands": "Biotène, XylitolBond",
+      "products": "Dry Mouth rinse, xylitol gum, xylitol gel",
+      "extra": "Hydration protocol"
+    },
+    {
+      "index": "Xerostomia",
+      "level": "severe",
+      "interpretation": "Severe xerostomia",
+      "protocol": "Intensive saliva protocol",
+      "brands": "Biotène, GC",
+      "products": "Oralbalance Gel, Dry Mouth Gel",
+      "extra": "Recall 3 мес"
+    },
+    {
+      "index": "Halitosis",
+      "level": "mild",
+      "interpretation": "Tongue coating",
+      "protocol": "Tongue-care",
+      "brands": "TePe, Jetpik",
+      "products": "Tongue Cleaner, Tongue scraper",
+      "extra": "Tongue instruction"
+    },
+    {
+      "index": "Чувствительность",
+      "level": "severe",
+      "interpretation": "Severe sensitivity",
+      "protocol": "Intensive desensitizing",
+      "brands": "Apadent, Biorepair, Curaprox",
+      "products": "Sensitive, Fast Sensitive Repair, CS12460",
+      "extra": "Ultra soft hygiene"
+    },
+    {
+      "index": "Пигментация",
+      "level": "severe",
+      "interpretation": "Smoker stains",
+      "protocol": "Intensive stain protocol",
+      "brands": "President, SPLAT, R.O.C.S.",
+      "products": "White Plus, Blackwood, Anti Tobacco",
+      "extra": "AirFlow + polishing"
+    },
+    {
+      "index": "Детский возраст",
+      "level": "high risk",
+      "interpretation": "High caries risk",
+      "protocol": "Intensive anti-caries",
+      "brands": "XylitolBond, Elmex",
+      "products": "Xylitol gel, Junior, Kids fluoride",
+      "extra": "Recall 3 мес"
+    }
+  ],
+  "safety_rules": [
+    {
+      "if": "Allergy casein = yes",
+      "then": "НЕ назначать GC Tooth Mousse / MI Paste"
+    },
+    {
+      "if": "Implant = yes",
+      "then": "избегать aggressive whitening"
+    },
+    {
+      "if": "Erosion severe = yes",
+      "then": "избегать high RDA"
+    },
+    {
+      "if": "CHX >14 days",
+      "then": "stop protocol"
+    },
+    {
+      "if": "Xerostomia = yes",
+      "then": "only alcohol free"
+    },
+    {
+      "if": "Braces = yes",
+      "then": "mandatory interdental care"
+    },
+    {
+      "if": "Halitosis = yes",
+      "then": "mandatory tongue cleaning"
+    },
+    {
+      "if": "Sensitivity = severe",
+      "then": "ultra soft + low RDA"
+    }
+  ],
+  "auto_assignment": [
+    {
+      "if": "API >70%",
+      "then": "ёршики + ирригатор"
+    },
+    {
+      "if": "White spots + braces",
+      "then": "MI Paste Plus"
+    },
+    {
+      "if": "Implant + bleeding",
+      "then": "peri-implant protocol"
+    },
+    {
+      "if": "Xerostomia + caries",
+      "then": "fluoride + saliva support"
+    },
+    {
+      "if": "High plaque",
+      "then": "AirFlow + CHX"
+    },
+    {
+      "if": "Halitosis + tongue coating",
+      "then": "tongue-care protocol"
+    }
+  ],
+  "brands": {
+    "table_4": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Щётки",
+        "products": "CS5460, CS12460, Surgical MegaSoft, Ortho Brush",
+        "scenarios": ""
+      },
+      {
+        "category": "Пасты",
+        "products": "Enzycal, Enzycal Sensitive, Black is White",
+        "scenarios": ""
+      },
+      {
+        "category": "Interdental",
+        "products": "CPS Prime, CPS Strong",
+        "scenarios": ""
+      },
+      {
+        "category": "Special care",
+        "products": "Implant Kit, Ortho Kit",
+        "scenarios": ""
+      }
+    ],
+    "table_5": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "CHX rinses",
+        "products": "ADS 205, ADS 212, ADS 220",
+        "scenarios": ""
+      },
+      {
+        "category": "Implant care",
+        "products": "Implant Pro",
+        "scenarios": ""
+      },
+      {
+        "category": "Perio",
+        "products": "Perio Pro",
+        "scenarios": ""
+      },
+      {
+        "category": "Sensitive",
+        "products": "Biosmalto",
+        "scenarios": ""
+      },
+      {
+        "category": "Daily care",
+        "products": "Daycare, Ecobio",
+        "scenarios": ""
+      }
+    ],
+    "table_6": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Remineralization",
+        "products": "Total Care, Premio",
+        "scenarios": ""
+      },
+      {
+        "category": "Sensitive",
+        "products": "Sensitive",
+        "scenarios": ""
+      },
+      {
+        "category": "Perio",
+        "products": "Perio",
+        "scenarios": ""
+      },
+      {
+        "category": "Kids",
+        "products": "Apadent Kids",
+        "scenarios": ""
+      }
+    ],
+    "table_7": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "CPP-ACP",
+        "products": "Tooth Mousse",
+        "scenarios": ""
+      },
+      {
+        "category": "CPP-ACP + Fluoride",
+        "products": "MI Paste Plus",
+        "scenarios": ""
+      },
+      {
+        "category": "Dry mouth",
+        "products": "Dry Mouth Gel",
+        "scenarios": ""
+      }
+    ],
+    "table_8": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Interdental",
+        "products": "Pink, Orange, Blue, Yellow, Green, Purple",
+        "scenarios": ""
+      },
+      {
+        "category": "Special brushes",
+        "products": "Compact Tuft, Implant Care, Ortho Brush",
+        "scenarios": ""
+      },
+      {
+        "category": "Tongue care",
+        "products": "Tongue Cleaner",
+        "scenarios": ""
+      }
+    ],
+    "table_9": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Irrigators",
+        "products": "JP50, JP200, Ultra",
+        "scenarios": ""
+      },
+      {
+        "category": "Tongue care",
+        "products": "Tongue Cleaner",
+        "scenarios": ""
+      },
+      {
+        "category": "Implant/Ortho",
+        "products": "Floss nozzles, ortho tips",
+        "scenarios": ""
+      }
+    ],
+    "table_10": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Daily",
+        "products": "Classic",
+        "scenarios": ""
+      },
+      {
+        "category": "Anti-inflammatory",
+        "products": "Active, Active Plus",
+        "scenarios": ""
+      },
+      {
+        "category": "Sensitive",
+        "products": "Sensitive",
+        "scenarios": ""
+      },
+      {
+        "category": "Whitening",
+        "products": "White Plus",
+        "scenarios": ""
+      },
+      {
+        "category": "Ortho",
+        "products": "Ortho",
+        "scenarios": ""
+      }
+    ],
+    "table_11": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Anti-caries",
+        "products": "Caries Protection",
+        "scenarios": ""
+      },
+      {
+        "category": "Sensitive",
+        "products": "Sensitive, Sensitive Professional",
+        "scenarios": ""
+      },
+      {
+        "category": "Erosion",
+        "products": "Opti-schmelz",
+        "scenarios": ""
+      },
+      {
+        "category": "Fluoride therapy",
+        "products": "Gelée",
+        "scenarios": ""
+      }
+    ],
+    "table_12": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Remineralization",
+        "products": "Total Protection",
+        "scenarios": ""
+      },
+      {
+        "category": "Sensitive",
+        "products": "Fast Sensitive Repair",
+        "scenarios": ""
+      },
+      {
+        "category": "Perio",
+        "products": "Peribioma",
+        "scenarios": ""
+      },
+      {
+        "category": "Night care",
+        "products": "Intensive Night",
+        "scenarios": ""
+      }
+    ],
+    "table_13": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Remineralization",
+        "products": "Biocalcium",
+        "scenarios": ""
+      },
+      {
+        "category": "Sensitive",
+        "products": "Sensitive",
+        "scenarios": ""
+      },
+      {
+        "category": "Whitening",
+        "products": "White Plus, Blackwood",
+        "scenarios": ""
+      },
+      {
+        "category": "Kids",
+        "products": "Junior",
+        "scenarios": ""
+      }
+    ],
+    "table_14": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Dry mouth",
+        "products": "Oralbalance Gel, Dry Mouth rinse",
+        "scenarios": ""
+      },
+      {
+        "category": "Toothpaste",
+        "products": "Dry Mouth Toothpaste",
+        "scenarios": ""
+      },
+      {
+        "category": "Spray",
+        "products": "Dry Mouth Spray",
+        "scenarios": ""
+      }
+    ],
+    "table_15": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Premium",
+        "products": "Designer Series",
+        "scenarios": ""
+      },
+      {
+        "category": "Kids",
+        "products": "Kids Gel",
+        "scenarios": ""
+      },
+      {
+        "category": "Whitening",
+        "products": "Tenderly Whitening",
+        "scenarios": ""
+      }
+    ],
+    "table_16": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Hydroxyapatite",
+        "products": "Hydroxyapatite Care",
+        "scenarios": ""
+      },
+      {
+        "category": "Whitening",
+        "products": "Whitening Oxygen",
+        "scenarios": ""
+      },
+      {
+        "category": "Sensitive",
+        "products": "Sensitive Repair",
+        "scenarios": ""
+      }
+    ],
+    "table_17": [
+      {
+        "category": "Категория",
+        "products": "Продукты",
+        "scenarios": ""
+      },
+      {
+        "category": "Kids",
+        "products": "Kids Xylitol Gel",
+        "scenarios": ""
+      },
+      {
+        "category": "Anti-caries",
+        "products": "Xylitol Gel",
+        "scenarios": ""
+      },
+      {
+        "category": "Saliva support",
+        "products": "Xylitol gum",
+        "scenarios": ""
+      }
+    ],
+    "table_18": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Пасты ежедневные",
+        "products": "Biocomplex, Active Calcium, Coffee & Tobacco, Double Mint, Energy, Bionica",
+        "scenarios": "ежедневная профилактика, налёт, поддержание после профгигиены"
+      },
+      {
+        "category": "Реминерализация",
+        "products": "Medical Minerals Gel, Active Calcium, Minerals",
+        "scenarios": "деминерализация, white spots, после отбеливания"
+      },
+      {
+        "category": "Чувствительность",
+        "products": "Sensitive Repair & Whitening, Sensitive Instant Relief",
+        "scenarios": "гиперестезия, рецессии, клиновидные дефекты"
+      },
+      {
+        "category": "Отбеливание / пигментация",
+        "products": "PRO Oxygen Whitening, Whitening, Coffee & Tobacco, Anti Tobacco",
+        "scenarios": "пигментированный налёт, курение, кофе/чай"
+      },
+      {
+        "category": "Сухость",
+        "products": "PRO Moisturizing",
+        "scenarios": "xerostomia, сухость слизистой"
+      },
+      {
+        "category": "Детские",
+        "products": "Baby 0–3, Kids 3–7, Junior, Teens",
+        "scenarios": "детская профилактика, подростки, брекеты"
+      },
+      {
+        "category": "Щётки",
+        "products": "Classic Soft, PRO Sensitive, Whitening, Baby Brush, Teens Brush, Ortho Brush",
+        "scenarios": "подбор по возрасту, чувствительности, ортодонтии"
+      }
+    ],
+    "table_19": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Ручные щётки",
+        "products": "CS 5460, CS 3960, CS 1560, CS 12460 Velvet, CS Smart, CS Surgical MegaSoft",
+        "scenarios": "ежедневная гигиена, чувствительность, после хирургии"
+      },
+      {
+        "category": "Монопучковые",
+        "products": "CS 1006, CS 1009, Single Brush",
+        "scenarios": "скученность, брекеты, импланты, пришеечная зона"
+      },
+      {
+        "category": "Ортодонтия",
+        "products": "Ortho Kit, CS Ortho, CPS Ortho, Ortho Travel Set",
+        "scenarios": "брекеты, элайнеры, white spots risk"
+      },
+      {
+        "category": "Импланты",
+        "products": "Implant Kit, CS 708 Implant-Ortho, Implant-care accessories",
+        "scenarios": "импланты, peri-implant maintenance"
+      },
+      {
+        "category": "Ёршики",
+        "products": "CPS Prime 06/07/08/09/011, CPS Perio, CPS Soft Implant, CPS Handy",
+        "scenarios": "межзубная гигиена, пародонтология, импланты"
+      },
+      {
+        "category": "Пасты",
+        "products": "Enzycal 1450, Enzycal 950, Enzycal Zero, Black is White, Be You",
+        "scenarios": "anti-caries, low abrasive, lifestyle, пигментация"
+      },
+      {
+        "category": "CHX",
+        "products": "Perio Plus Balance 0.05, Protect 0.12, Forte 0.20, Regenerate 0.09",
+        "scenarios": "воспаление, после хирургии, короткий курс"
+      },
+      {
+        "category": "Электрические",
+        "products": "Hydrosonic Easy, Hydrosonic Pro, Hydrosonic Black is White",
+        "scenarios": "премиум-гигиена, импланты, брекеты"
+      },
+      {
+        "category": "Детские",
+        "products": "Baby 4260, Kids 5500, Kids toothpaste, Curakid",
+        "scenarios": "детская профилактика"
+      },
+      {
+        "category": "Элайнеры",
+        "products": "Aligner Foam, Aligner cleaning system",
+        "scenarios": "элайнеры, каппы"
+      }
+    ],
+    "table_20": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Пасты",
+        "products": "Total Protective Repair, Anti-Cavities Active Shield, Pro White",
+        "scenarios": "ежедневная профилактика, кариес-риск, пигментация"
+      },
+      {
+        "category": "Чувствительность",
+        "products": "Fast Sensitive Repair, Desensitizing Shock Treatment",
+        "scenarios": "гиперестезия, рецессии, после отбеливания"
+      },
+      {
+        "category": "Десна / микробиом",
+        "products": "Peribioma Gum Protection, Gum Protection Mouthwash",
+        "scenarios": "gingivitis, bleeding, peri-implant mucositis"
+      },
+      {
+        "category": "Эрозии / ночь",
+        "products": "Intensive Night Anti-Erosion",
+        "scenarios": "эрозии, ночная реминерализация"
+      },
+      {
+        "category": "Детские",
+        "products": "Kids 0–6, Junior 6–12",
+        "scenarios": "детская профилактика, white spots"
+      },
+      {
+        "category": "Ополаскиватели",
+        "products": "Triple Action Mouthwash, Gum Protection Mouthwash, Antibacterial Mouthwash Plus",
+        "scenarios": "ежедневная профилактика, воспаление"
+      },
+      {
+        "category": "Щётки",
+        "products": "Ultra Soft Brush, Gum Care Brush, Junior Brush",
+        "scenarios": "чувствительность, десна, дети"
+      }
+    ],
+    "table_21": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Ёршики",
+        "products": "Interdental XS, S, M, L, Flexible Interdental, Cylindrical Brushes",
+        "scenarios": "межзубной налёт, скученность, пародонтология"
+      },
+      {
+        "category": "Ортодонтия",
+        "products": "Ortho Brush, Ortho Interdental System",
+        "scenarios": "брекеты, очистка вокруг замков"
+      },
+      {
+        "category": "Импланты",
+        "products": "Implant Floss, Soft Implant Brushes",
+        "scenarios": "импланты, peri-implant hygiene"
+      },
+      {
+        "category": "Пародонтология",
+        "products": "Soft Picks, Ultra Soft Series",
+        "scenarios": "кровоточивость, чувствительная десна"
+      },
+      {
+        "category": "Наборы",
+        "products": "Travel Interdental Kit, Daily Hygiene Kit, Pocket Brushes",
+        "scenarios": "комплаенс, после еды, дорожная гигиена"
+      }
+    ],
+    "table_22": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Пасты",
+        "products": "Daily Care, Bio Protection, Mineral Sensitive, Whitening Care",
+        "scenarios": "ежедневная гигиена, десна, чувствительность, пигментация"
+      },
+      {
+        "category": "Гели",
+        "products": "Remineralizing Gel",
+        "scenarios": "деминерализация, white spots, после отбеливания"
+      },
+      {
+        "category": "Ополаскиватели",
+        "products": "Sensitive Mouthwash, Gum Care Mouthwash",
+        "scenarios": "чувствительность, воспаление"
+      },
+      {
+        "category": "Щётки",
+        "products": "Ultra Soft, Daily Soft, Ortho Brush, Kids Brush",
+        "scenarios": "sensitivity, ежедневная гигиена, брекеты, дети"
+      },
+      {
+        "category": "Детские",
+        "products": "EMRA Kids",
+        "scenarios": "детская профилактика"
+      }
+    ],
+    "table_23": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Ирригаторы",
+        "products": "JP50, JP200 Elite, JP200 Ultra, Jetpik Ultra",
+        "scenarios": "межзубная очистка, импланты, брекеты"
+      },
+      {
+        "category": "Технология",
+        "products": "Power Floss, Pulsating Floss, Floss Nozzle",
+        "scenarios": "глубокая очистка межзубных промежутков"
+      },
+      {
+        "category": "Насадки",
+        "products": "Sonic Brush Tip, Tongue Cleaner, Implant Tip, Ortho Tip",
+        "scenarios": "язык, импланты, брекеты"
+      },
+      {
+        "category": "Скребки",
+        "products": "Stainless Steel Tongue Cleaner",
+        "scenarios": "галитоз, налёт на языке"
+      },
+      {
+        "category": "Дополнительно",
+        "products": "Travel Case, UV Sanitizer, USB charger",
+        "scenarios": "дорожная гигиена, санитарная обработка насадок"
+      }
+    ],
+    "table_24": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Ежедневные",
+        "products": "Classic, Profi, Daily",
+        "scenarios": "поддерживающая профилактика"
+      },
+      {
+        "category": "Десна",
+        "products": "Active, Active Plus, Antibacterial, Chlorhexidine",
+        "scenarios": "gingivitis, bleeding, высокий налёт"
+      },
+      {
+        "category": "Чувствительность",
+        "products": "Sensitive",
+        "scenarios": "гиперестезия, рецессии"
+      },
+      {
+        "category": "Отбеливание",
+        "products": "White, White Plus",
+        "scenarios": "пигментация, курильщики"
+      },
+      {
+        "category": "Ортодонтия / импланты",
+        "products": "Ortho, Ortho-Implant",
+        "scenarios": "брекеты, импланты, ортопедия"
+      }
+    ],
+    "table_25": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Реминерализация",
+        "products": "Apadent Total Care, Apagard Premio, Apagard XtraMint",
+        "scenarios": "nano-hydroxyapatite, white spots"
+      },
+      {
+        "category": "Чувствительность",
+        "products": "Apadent Sensitive",
+        "scenarios": "гиперестезия, эрозии"
+      },
+      {
+        "category": "Десна",
+        "products": "Apadent Perio",
+        "scenarios": "gingivitis, delicate perio-care"
+      },
+      {
+        "category": "Интенсивный уход",
+        "products": "Apagard Deep Care",
+        "scenarios": "выраженная деминерализация, после отбеливания"
+      },
+      {
+        "category": "Детские",
+        "products": "Apadent Kids",
+        "scenarios": "детская профилактика без фтора"
+      },
+      {
+        "category": "Щётки",
+        "products": "Apadent Soft Brush, Crystal Brush, Kids Brush",
+        "scenarios": "мягкая очистка, дети"
+      }
+    ],
+    "table_26": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Professional",
+        "products": "Biocalcium, Sensitive, Active, White Plus, Ultracomplex",
+        "scenarios": "реминерализация, чувствительность, воспаление, отбеливание"
+      },
+      {
+        "category": "Special",
+        "products": "Blackwood, Extreme White, Sea Minerals, Organic",
+        "scenarios": "пигментация, lifestyle, mineral care"
+      },
+      {
+        "category": "Innova",
+        "products": "Innova Sensitive, Innova Intensive, Innova Enamel Repair",
+        "scenarios": "премиальная sensitivity/rem repair"
+      },
+      {
+        "category": "Детские",
+        "products": "Junior, Kids",
+        "scenarios": "детская профилактика"
+      },
+      {
+        "category": "Щётки",
+        "products": "Professional Ultra Soft, Complete Soft, Whitening Brush, Junior Brush",
+        "scenarios": "чувствительность, ежедневная, дети"
+      }
+    ],
+    "table_27": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Кариес-риск",
+        "products": "Caries Protection, Caries Protection Professional",
+        "scenarios": "amine fluoride, anti-caries"
+      },
+      {
+        "category": "Чувствительность",
+        "products": "Sensitive, Sensitive Professional, Sensitive Whitening",
+        "scenarios": "гиперестезия, exposed dentin"
+      },
+      {
+        "category": "Эрозии",
+        "products": "Erosion Protection, Opti-schmelz",
+        "scenarios": "кислотная эрозия"
+      },
+      {
+        "category": "Фтор-гель",
+        "products": "Elmex Gelée",
+        "scenarios": "интенсивная фторпрофилактика, white spots"
+      },
+      {
+        "category": "Детские",
+        "products": "Kids, Junior, Teen",
+        "scenarios": "детская и подростковая профилактика"
+      },
+      {
+        "category": "Десна",
+        "products": "Sensitive + Gum Care",
+        "scenarios": "sensitivity + gingivitis"
+      }
+    ],
+    "table_28": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "CPP-ACP",
+        "products": "Tooth Mousse",
+        "scenarios": "реминерализация, white spots, после отбеливания"
+      },
+      {
+        "category": "CPP-ACP + фтор",
+        "products": "MI Paste Plus",
+        "scenarios": "high caries risk, брекеты, white spots"
+      },
+      {
+        "category": "Сухость",
+        "products": "Dry Mouth Gel",
+        "scenarios": "xerostomia"
+      },
+      {
+        "category": "Вкусы",
+        "products": "Strawberry, Tutti Frutti, Vanilla, Mint",
+        "scenarios": "дети, комплаенс, nightly protocol"
+      },
+      {
+        "category": "Safety",
+        "products": "Casein / milk protein warning",
+        "scenarios": "при аллергии на казеин НЕ назначать"
+      }
+    ],
+    "table_29": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "ADS CHX",
+        "products": "ADS 205 0.05%, ADS 212 0.12%, ADS 220 0.20%",
+        "scenarios": "gingivitis, surgery, short protocol"
+      },
+      {
+        "category": "ADS DNA",
+        "products": "ADS DNA Gel Toothpaste, DNA line",
+        "scenarios": "поддерживающая anti-inflammatory терапия"
+      },
+      {
+        "category": "Implant",
+        "products": "Implant Pro Toothpaste, implant-care line",
+        "scenarios": "импланты, peri-implantitis risk"
+      },
+      {
+        "category": "Perio",
+        "products": "Perio Pro",
+        "scenarios": "пародонтология, bleeding"
+      },
+      {
+        "category": "Biosmalto",
+        "products": "Biosmalto Sensitive Teeth, Biosmalto Caries Abrasion Erosion",
+        "scenarios": "чувствительность, реминерализация, эрозии"
+      },
+      {
+        "category": "Daycare",
+        "products": "Daycare Protection Booster, Daycare mouthwash/toothpaste",
+        "scenarios": "ежедневная профилактика"
+      },
+      {
+        "category": "ECOBIO",
+        "products": "Ecobio line",
+        "scenarios": "gentle/natural daily care"
+      }
+    ],
+    "table_30": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Whitening",
+        "products": "Diamond Brightening Tooth Cream, Tenderly Whitening Tooth Cream, Anti-Age Whitening",
+        "scenarios": "пигментация, эстетика"
+      },
+      {
+        "category": "Sensitive / Mask",
+        "products": "Soothing Tooth Mask",
+        "scenarios": "чувствительность, после отбеливания"
+      },
+      {
+        "category": "Peeling",
+        "products": "Smoothing & Brightening Tooth Peeling",
+        "scenarios": "плотная пигментация, ограниченно"
+      },
+      {
+        "category": "Teens",
+        "products": "Bubble Gum, Grape Boom",
+        "scenarios": "подростки, брекеты"
+      },
+      {
+        "category": "Kids",
+        "products": "Green Apple, Banana, Berry, Pear Kids Tooth Gel",
+        "scenarios": "детская профилактика"
+      },
+      {
+        "category": "Marker",
+        "products": "Marker Toothpaste, Dental Tutor Kit",
+        "scenarios": "контроль налёта, обучение гигиене"
+      },
+      {
+        "category": "Brushes",
+        "products": "Picasso, Kandinsky, Van Gogh, Impression Collections",
+        "scenarios": "premium compliance"
+      }
+    ],
+    "table_31": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Daily",
+        "products": "Daily Lotus",
+        "scenarios": "ежедневная профилактика, мягкое отбеливание"
+      },
+      {
+        "category": "Whitening",
+        "products": "Whitening Oxygen",
+        "scenarios": "пигментация"
+      },
+      {
+        "category": "Sensitive",
+        "products": "Sensitive Repair",
+        "scenarios": "гиперестезия"
+      },
+      {
+        "category": "Remineralization",
+        "products": "Hydroxyapatite Care",
+        "scenarios": "деминерализация, white spots"
+      },
+      {
+        "category": "Gum",
+        "products": "Gum Protection",
+        "scenarios": "gingivitis support"
+      },
+      {
+        "category": "Kids",
+        "products": "VOC Kids",
+        "scenarios": "детская профилактика"
+      }
+    ],
+    "table_32": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Kids",
+        "products": "Kids Xylitol Gel, Xlear Kid’s Spry Gel, XyliWhite Kids",
+        "scenarios": "детская anti-caries профилактика"
+      },
+      {
+        "category": "Tooth gel",
+        "products": "Xylitol Tooth Gel, All Natural Xylitol Tooth Gel",
+        "scenarios": "anti-caries, fluoride-free"
+      },
+      {
+        "category": "Daily",
+        "products": "XyliWhite Toothpaste Gel",
+        "scenarios": "ежедневная профилактика"
+      },
+      {
+        "category": "Dry mouth",
+        "products": "Xylitol gum, lozenges, saliva stimulators",
+        "scenarios": "xerostomia, стимуляция слюны"
+      },
+      {
+        "category": "Safety",
+        "products": "Dog toxicity warning, excessive ingestion caution",
+        "scenarios": "предупреждение для пациента"
+      }
+    ],
+    "table_33": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Гели",
+        "products": "Oralbalance Moisturizing Gel",
+        "scenarios": "выраженная ксеростомия, ночная сухость"
+      },
+      {
+        "category": "Паста",
+        "products": "Dry Mouth Fluoride Toothpaste",
+        "scenarios": "dry mouth + caries risk"
+      },
+      {
+        "category": "Ополаскиватели",
+        "products": "Moisturizing Mouthwash, Gentle Oral Rinse",
+        "scenarios": "сухость, mucositis support"
+      },
+      {
+        "category": "Спрей",
+        "products": "Dry Mouth Spray",
+        "scenarios": "дневное увлажнение"
+      },
+      {
+        "category": "AI-сценарии",
+        "products": "Oncology care, Sjögren, medication xerostomia, diabetes xerostomia",
+        "scenarios": "онкопациенты, диабет, сухость"
+      }
+    ],
+    "table_34": [
+      {
+        "category": "Категория",
+        "products": "Продукты / линейки",
+        "scenarios": "AI-сценарии"
+      },
+      {
+        "category": "Interdental",
+        "products": "Original Interdental Brushes 0.4 Pink, 0.5 Orange, 0.6 Blue, 0.7 Yellow, 0.8 Green, 1.1 Purple",
+        "scenarios": "подбор ёршиков по промежуткам"
+      },
+      {
+        "category": "Angle",
+        "products": "TePe Angle",
+        "scenarios": "моляры, импланты, труднодоступные зоны"
+      },
+      {
+        "category": "Implant",
+        "products": "Implant Care, Implant Orthodontic Brush",
+        "scenarios": "импланты, мосты, ортопедия"
+      },
+      {
+        "category": "Special Care",
+        "products": "Special Care, Gentle Care",
+        "scenarios": "после хирургии, чувствительная десна"
+      },
+      {
+        "category": "Mono",
+        "products": "Compact Tuft, Interspace Brush",
+        "scenarios": "брекеты, скученность, импланты"
+      },
+      {
+        "category": "Tongue",
+        "products": "Tongue Cleaner",
+        "scenarios": "галитоз, налёт на языке"
+      },
+      {
+        "category": "Ortho",
+        "products": "Ortho Brush, Ortho Kit",
+        "scenarios": "брекеты"
+      }
+    ]
+  }
+}
