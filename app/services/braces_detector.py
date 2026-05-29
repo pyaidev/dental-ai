@@ -6,20 +6,57 @@ import numpy as np
 from PIL import Image
 
 BRACES_MODEL_PATH = Path("ml/runs/dental_braces_v1/weights/best.pt")
+BRACES_CLS_MODEL_PATH = Path("ml/runs/braces_cls/v1/weights/best.pt")
 
 
 def is_braces_model_available() -> bool:
-    return BRACES_MODEL_PATH.exists()
+    return BRACES_MODEL_PATH.exists() or BRACES_CLS_MODEL_PATH.exists()
+
+
+_cached_cls_model = None
+
+def _detect_cls(image_path: str) -> dict:
+    """Detect braces using YOLO classification model."""
+    global _cached_cls_model
+    if _cached_cls_model is None:
+        from ultralytics import YOLO
+        _cached_cls_model = YOLO(str(BRACES_CLS_MODEL_PATH))
+    results = _cached_cls_model(image_path, verbose=False)
+    if results and len(results) > 0:
+        probs = results[0].probs
+        if probs is not None:
+            names = results[0].names
+            # Find braces class index
+            braces_idx = None
+            for idx, name in names.items():
+                if name == "braces":
+                    braces_idx = idx
+                    break
+            if braces_idx is not None:
+                conf = float(probs.data[braces_idx])
+                return {"has_braces": conf > 0.5, "has_implants": False, "confidence": round(conf, 2)}
+    return {"has_braces": False, "has_implants": False, "confidence": 0}
 
 
 def detect_braces_implants(image_path: str) -> dict:
     """Detect braces and implants in dental photo.
-    Uses YOLO first (trained model), HSV as secondary signal.
+    Priority: 1) Classification model (works on all photos including stained)
+              2) YOLO detection model
+              3) HSV fallback (only non-stained photos)
     Returns: {"has_braces": bool, "has_implants": bool, "confidence": float}
     """
-    # Try YOLO first (most reliable if model exists)
+    # 1. Try classification model (best for stained photos)
+    if BRACES_CLS_MODEL_PATH.exists():
+        try:
+            cls_result = _detect_cls(image_path)
+            if cls_result["confidence"] > 0.3:
+                return cls_result
+        except Exception:
+            pass
+
+    # 2. Try YOLO detection model
     yolo_result = {"has_braces": False, "has_implants": False, "confidence": 0}
-    if is_braces_model_available():
+    if BRACES_MODEL_PATH.exists():
         try:
             yolo_result = _detect_yolo(image_path)
             if yolo_result["has_braces"] or yolo_result["has_implants"]:
@@ -27,7 +64,7 @@ def detect_braces_implants(image_path: str) -> dict:
         except Exception:
             pass
 
-    # HSV as fallback — only high confidence results
+    # 3. HSV fallback (only for non-stained photos)
     hsv_result = _detect_hsv(image_path)
 
     return {
