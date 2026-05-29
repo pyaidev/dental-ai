@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import PhotoUpload from "@/components/PhotoUpload";
 import PhoneInput from "@/components/PhoneInput";
 import IndexGauge from "@/components/IndexGauge";
+import { ReportsLimitModal } from "@/components/SubscriptionGate";
 import { API_BASE } from "@/lib/utils";
 
 interface AnalysisResult {
@@ -64,6 +65,7 @@ function AnalyzeContent() {
   }, [router, searchParams]);
   const [editing, setEditing] = useState(false);
   const [editingRecs, setEditingRecs] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const [editPctFront, setEditPctFront] = useState(0);
   const [editPctRight, setEditPctRight] = useState(0);
   const [editPctLeft, setEditPctLeft] = useState(0);
@@ -196,7 +198,15 @@ function AnalyzeContent() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
-      if (!resp.ok) throw new Error("Ошибка анализа");
+      if (resp.status === 402) {
+        setShowLimitModal(true);
+        setStep("form");
+        return;
+      }
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => null);
+        throw new Error(errData?.detail || "Ошибка анализа");
+      }
       const data = await resp.json();
       setResult(data);
       setStep("results");
@@ -864,6 +874,7 @@ function AnalyzeContent() {
             </motion.div>
           )}
         </AnimatePresence>
+        <ReportsLimitModal show={showLimitModal} onClose={() => setShowLimitModal(false)} />
       </main>
     </>
   );

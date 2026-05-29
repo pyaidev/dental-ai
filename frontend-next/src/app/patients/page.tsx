@@ -10,6 +10,7 @@ import Questionnaire from "@/components/Questionnaire";
 import InterdentalChart from "@/components/InterdentalChart";
 import PeriodontalChart from "@/components/PeriodontalChart";
 import WhiteningPanel from "@/components/WhiteningPanel";
+import { PaywallModal } from "@/components/SubscriptionGate";
 import { API_BASE } from "@/lib/utils";
 
 interface PatientItem {
@@ -34,7 +35,6 @@ interface HistoryItem {
 
 export default function PatientsPage() {
   const router = useRouter();
-  const [permissions, setPermissions] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [patients, setPatients] = useState<PatientItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,8 +42,18 @@ export default function PatientsPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"history" | "questionnaire" | "interdental" | "periodontal" | "whitening">("history");
+  const [paywallFeature, setPaywallFeature] = useState("");
+  const [userPerms, setUserPerms] = useState([] as string[]);
 
   const token = typeof window !== "undefined" ? localStorage.getItem("dental_token") : null;
+
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_BASE}/api/subscription`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => setUserPerms(d.permissions || []))
+      .catch(() => {});
+  }, [token]);
 
   const search = useCallback(async (q: string) => {
     if (!token) { router.replace("/login"); return; }
@@ -64,7 +74,7 @@ export default function PatientsPage() {
     if (!token) return;
     fetch(`${API_BASE}/api/subscription`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
-      .then(d => setPermissions(d.permissions || []))
+      .then(d => setUserPerms(d.permissions || []))
       .catch(() => {});
   }, [token]);
 
@@ -196,16 +206,16 @@ export default function PatientsPage() {
                 {/* Tabs */}
                 <div className="flex gap-1 overflow-x-auto border-b border-card-border px-3 py-1">
                   {([
-                    { key: "history", label: "История", icon: History, perm: null },
-                    { key: "questionnaire", label: "Анкета", icon: ClipboardList, perm: null },
-                    { key: "interdental", label: "Ёршики", icon: Brush, perm: "interdental" },
-                    { key: "periodontal", label: "Пародонт", icon: Activity, perm: "periodontal" },
-                    { key: "whitening", label: "Отбел.", icon: Sparkles, perm: "whitening" },
-                  ] as const).map(tab => {
-                    const locked = tab.perm && !permissions.includes(tab.perm);
+                    { key: "history" as const, label: "История", icon: History, perm: "" },
+                    { key: "questionnaire" as const, label: "Анкета", icon: ClipboardList, perm: "" },
+                    { key: "interdental" as const, label: "Ёршики", icon: Brush, perm: "interdental" },
+                    { key: "periodontal" as const, label: "Пародонт", icon: Activity, perm: "periodontal" },
+                    { key: "whitening" as const, label: "Отбел.", icon: Sparkles, perm: "whitening" },
+                  ]).map(tab => {
+                    const locked = tab.perm && !userPerms.includes(tab.perm);
                     return (
                       <button key={tab.key}
-                        onClick={() => locked ? router.push("/subscription") : setActiveTab(tab.key)}
+                        onClick={() => locked ? setPaywallFeature(tab.perm || "") : setActiveTab(tab.key)}
                         className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${
                           locked ? "text-gray-300 cursor-not-allowed" :
                           activeTab === tab.key ? "bg-primary/10 text-primary" : "text-muted hover:text-foreground"
@@ -322,6 +332,7 @@ export default function PatientsPage() {
         </div>
       </main>
       <Footer />
+      <PaywallModal show={!!paywallFeature} onClose={() => setPaywallFeature("")} feature={paywallFeature} />
     </>
   );
 }
