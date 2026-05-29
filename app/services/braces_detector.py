@@ -155,8 +155,8 @@ def _detect_hsv(image_path: str) -> dict:
     has_blobs = bracket_blobs > 8
 
     if has_plaque_indicator:
-        # Plaque indicator photo — HSV is unreliable, disable detection entirely
-        has_braces = False
+        # Plaque indicator photo — metal and wire unreliable, but colored ligatures are reliable
+        has_braces = has_colored and (has_wire or has_blobs or has_metal)
     else:
         has_braces = has_wire and (has_metal or has_colored or has_blobs)
 
