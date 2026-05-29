@@ -40,9 +40,39 @@ const reviews = [
   { name: "Ирина С.", role: "Ортодонт, Екатеринбург", quote: "Для пациентов с брекетами — незаменимый инструмент. Видно все проблемные зоны, и пациент получает конкретные рекомендации по ёршикам.", stars: 5 },
 ];
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Odonta Index AI",
+  applicationCategory: "HealthApplication",
+  operatingSystem: "Web",
+  url: "https://odontaindex.ru",
+  description: "AI-сервис анализа зубного налёта и расчёта индексов гигиены полости рта для стоматологов и гигиенистов",
+  offers: [
+    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "RUB", description: "5 бесплатных отчётов" },
+    { "@type": "Offer", name: "Start", price: "1990", priceCurrency: "RUB", description: "30 отчётов/мес" },
+    { "@type": "Offer", name: "Pro", price: "2990", priceCurrency: "RUB", description: "100 отчётов/мес" },
+    { "@type": "Offer", name: "Clinic", price: "5990", priceCurrency: "RUB", description: "200 отчётов/мес" },
+    { "@type": "Offer", name: "Expert", price: "9990", priceCurrency: "RUB", description: "500 отчётов/мес" },
+  ],
+  provider: {
+    "@type": "Organization",
+    name: "ИП Коростелев Александр Андреевич",
+    taxID: "312334497069",
+    url: "https://odontaindex.ru",
+  },
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "4.9",
+    ratingCount: "47",
+    bestRating: "5",
+  },
+};
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* NAV */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100/50">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
