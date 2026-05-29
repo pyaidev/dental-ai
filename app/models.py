@@ -155,9 +155,10 @@ class Patient(Base):
     __tablename__ = "patients"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("admin_users.id"), nullable=True)
     fio: Mapped[str] = mapped_column(String(255), nullable=False)
     date_of_birth: Mapped[str | None] = mapped_column(String(20))
-    card_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    card_number: Mapped[str] = mapped_column(String(50), nullable=False)
     telegram_id: Mapped[str | None] = mapped_column(String(50))
     max_id: Mapped[str | None] = mapped_column(String(50))
     phone: Mapped[str | None] = mapped_column(String(50))

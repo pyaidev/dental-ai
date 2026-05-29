@@ -31,25 +31,26 @@ def get_dashboard(
         cached = _redis.get(f"dashboard:{user.id}")
         if cached:
             return json.loads(cached)
-    total_analyses = db.query(func.count(Analysis.id)).scalar() or 0
-    total_patients = db.query(func.count(Patient.id)).scalar() or 0
 
-    avg_plaque = db.query(func.avg(Analysis.plaque_pct_overall)).scalar()
+    # Filter by user (admin sees all)
+    if user.role == "admin":
+        patient_q = db.query(Patient)
+        analysis_q = db.query(Analysis)
+    else:
+        patient_q = db.query(Patient).filter(Patient.user_id == user.id)
+        my_patient_ids = [p.id for p in patient_q.all()]
+        analysis_q = db.query(Analysis).filter(Analysis.patient_id.in_(my_patient_ids)) if my_patient_ids else db.query(Analysis).filter(Analysis.id == -1)
+
+    total_analyses = analysis_q.count()
+    total_patients = patient_q.count()
+
+    avg_plaque = analysis_q.with_entities(func.avg(Analysis.plaque_pct_overall)).scalar()
     avg_plaque = round(avg_plaque, 1) if avg_plaque else 0
 
     today = datetime.utcnow().date()
-    today_analyses = (
-        db.query(func.count(Analysis.id))
-        .filter(func.date(Analysis.created_at) == today)
-        .scalar() or 0
-    )
+    today_analyses = analysis_q.filter(func.date(Analysis.created_at) == today).count()
 
-    recent = (
-        db.query(Analysis)
-        .order_by(Analysis.created_at.desc())
-        .limit(10)
-        .all()
-    )
+    recent = analysis_q.order_by(Analysis.created_at.desc()).limit(10).all()
 
     recent_list = []
     for a in recent:

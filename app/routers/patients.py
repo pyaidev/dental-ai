@@ -9,13 +9,21 @@ from app.routers.auth import get_current_user
 router = APIRouter()
 
 
+def _patient_filter(db, user):
+    """Return Patient query filtered by user. Admin sees all."""
+    q = db.query(Patient)
+    if user.role != "admin":
+        q = q.filter(Patient.user_id == user.id)
+    return q
+
+
 @router.get("/patients/search")
 def search_patients(
     q: str = Query("", min_length=0),
     user: AdminUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Patient)
+    query = _patient_filter(db, user)
     if q:
         query = query.filter(
             or_(
@@ -51,7 +59,7 @@ def patient_history(
     user: AdminUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    patient = _patient_filter(db, user).filter(Patient.id == patient_id).first()
     if not patient:
         return {"error": "Patient not found"}
 
@@ -96,7 +104,7 @@ def delete_patient(
     user: AdminUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    patient = _patient_filter(db, user).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
 
@@ -123,6 +131,12 @@ def delete_analysis(
     analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
+
+    # Check ownership
+    if user.role != "admin":
+        patient = db.query(Patient).filter(Patient.id == analysis.patient_id).first()
+        if not patient or patient.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
 
     import os
     for path in [analysis.photo_front, analysis.photo_right, analysis.photo_left,

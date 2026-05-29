@@ -169,9 +169,9 @@ async def analyze(
             db.flush()
 
     # Get or create patient
-    patient = db.query(Patient).filter(Patient.card_number == card_number).first()
+    patient = db.query(Patient).filter(Patient.card_number == card_number, Patient.user_id == user.id).first()
     if not patient:
-        patient = Patient(fio=patient_fio, date_of_birth=patient_dob, card_number=card_number, phone=patient_phone if patient_phone else None)
+        patient = Patient(fio=patient_fio, date_of_birth=patient_dob, card_number=card_number, phone=patient_phone if patient_phone else None, user_id=user.id)
         db.add(patient)
         db.flush()
     else:

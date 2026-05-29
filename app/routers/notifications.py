@@ -72,8 +72,12 @@ def get_notifications(
                 "time": None,
             })
 
-    # 2. Recent analyses
-    recent = db.query(Analysis).order_by(desc(Analysis.created_at)).limit(3).all()
+    # 2. Recent analyses (user's own patients only)
+    if user.role == "admin":
+        recent = db.query(Analysis).order_by(desc(Analysis.created_at)).limit(3).all()
+    else:
+        my_pids = [p.id for p in db.query(Patient.id).filter(Patient.user_id == user.id).all()]
+        recent = db.query(Analysis).filter(Analysis.patient_id.in_(my_pids)).order_by(desc(Analysis.created_at)).limit(3).all() if my_pids else []
     for a in recent:
         patient = db.query(Patient).filter(Patient.id == a.patient_id).first()
         if a.created_at and (datetime.now(UTC) - a.created_at.replace(tzinfo=UTC)).days < 1:
@@ -86,10 +90,11 @@ def get_notifications(
                 "time": a.created_at.isoformat() if a.created_at else None,
             })
 
-    # 3. Patients needing attention (high plaque)
-    high_plaque = db.query(Analysis).filter(
-        Analysis.plaque_pct_overall > 50
-    ).order_by(desc(Analysis.created_at)).limit(2).all()
+    # 3. Patients needing attention (high plaque, user's own)
+    if user.role == "admin":
+        high_plaque = db.query(Analysis).filter(Analysis.plaque_pct_overall > 50).order_by(desc(Analysis.created_at)).limit(2).all()
+    else:
+        high_plaque = db.query(Analysis).filter(Analysis.plaque_pct_overall > 50, Analysis.patient_id.in_(my_pids)).order_by(desc(Analysis.created_at)).limit(2).all() if my_pids else []
     for a in high_plaque:
         patient = db.query(Patient).filter(Patient.id == a.patient_id).first()
         notifs.append({
