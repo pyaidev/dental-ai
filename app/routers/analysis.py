@@ -63,6 +63,16 @@ async def analyze(
     user: AdminUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Check subscription limit BEFORE processing
+    if user.role != "admin":
+        from app.models import Subscription
+        active_sub = db.query(Subscription).filter(
+            Subscription.user_id == user.id,
+            Subscription.status == "active",
+        ).order_by(Subscription.created_at.desc()).first()
+        if not active_sub or active_sub.reports_remaining <= 0:
+            raise HTTPException(status_code=402, detail="Лимит отчётов исчерпан. Перейдите на подходящий тариф.")
+
     analysis_id = str(uuid.uuid4())[:8]
 
     # Validate and save uploaded photos
