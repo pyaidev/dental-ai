@@ -14,31 +14,34 @@ from app.routers.auth import get_current_user
 
 router = APIRouter()
 
-# Plans: price per report
+# Plans: monthly subscription
 PLANS = {
-    "hygiene": {
-        "name": "Гигиена", "price": 35,
-        "features": ["Анализ налёта", "5 индексов", "PDF-отчёт"],
-        "permissions": ["analysis", "indices", "pdf", "questionnaire"],
+    "free": {
+        "name": "Free", "price": 0, "reports_limit": 5, "period": "once",
+        "features": ["5 бесплатных отчётов", "AI-анализ налёта", "Odonta Hygiene Score", "Базовые рекомендации"],
+        "permissions": ["analysis", "indices", "pdf"],
     },
-    "hygiene_brushes": {
-        "name": "Гигиена + Ёршики", "price": 40,
-        "features": ["Анализ налёта", "5 индексов", "Ёршикограмма", "PDF-отчёт"],
-        "permissions": ["analysis", "indices", "pdf", "questionnaire", "interdental"],
+    "start": {
+        "name": "Odonta Index Start", "price": 1990, "reports_limit": 30, "period": "month",
+        "features": ["30 отчётов/мес", "Все индексы гигиены", "PDF-отчёт", "Подбор ёршиков", "Пародонт. скрининг", "AI-чат для пациента"],
+        "permissions": ["analysis", "indices", "pdf", "questionnaire", "interdental", "periodontal", "ai_chat"],
     },
-    "hygiene_perio": {
-        "name": "Гигиена + Ёршики + Пародонтограмма", "price": 50,
-        "features": ["Анализ налёта", "5 индексов", "Ёршикограмма", "Пародонтограмма", "PDF-отчёт"],
-        "permissions": ["analysis", "indices", "pdf", "questionnaire", "interdental", "periodontal"],
+    "pro": {
+        "name": "Odonta Index Pro", "price": 2990, "reports_limit": 100, "period": "month",
+        "features": ["100 отчётов/мес", "Все функции Start", "История пациента", "Динамика показателей", "Оценка риска кариеса", "Чат-бот напоминаний"],
+        "permissions": ["analysis", "indices", "pdf", "questionnaire", "interdental", "periodontal", "ai_chat", "history", "dynamics", "caries_risk", "reminders"],
     },
-    "all": {
-        "name": "Полный пакет", "price": 60,
-        "features": ["Анализ налёта", "5 индексов", "Ёршикограмма", "Пародонтограмма", "Отбеливание", "PDF-отчёт"],
-        "permissions": ["analysis", "indices", "pdf", "questionnaire", "interdental", "periodontal", "whitening"],
+    "clinic": {
+        "name": "Odonta Index Clinic", "price": 5990, "reports_limit": 200, "period": "month",
+        "features": ["200 отчётов/мес", "Все функции Pro", "Брендирование отчётов", "Логотип клиники в PDF", "Групповые рассылки"],
+        "permissions": ["analysis", "indices", "pdf", "questionnaire", "interdental", "periodontal", "ai_chat", "history", "dynamics", "caries_risk", "reminders", "branding", "bulk_send"],
+    },
+    "expert": {
+        "name": "Odonta Index Expert", "price": 9990, "reports_limit": 500, "period": "month",
+        "features": ["500 отчётов/мес", "Все функции Clinic", "Аналитика по врачам", "Рейтинг врачей", "Управленческий отчёт"],
+        "permissions": ["analysis", "indices", "pdf", "questionnaire", "interdental", "periodontal", "ai_chat", "history", "dynamics", "caries_risk", "reminders", "branding", "bulk_send", "analytics", "doctor_rating", "management_report"],
     },
 }
-
-PACKAGES = [10, 50, 100]
 
 
 def check_permission(user_id: int, feature: str, db: Session) -> bool:
@@ -57,13 +60,12 @@ def check_permission(user_id: int, feature: str, db: Session) -> bool:
 
 
 class PurchaseRequest(BaseModel):
-    plan: str = Field(..., pattern="^(hygiene|hygiene_brushes|hygiene_perio|all)$")
-    quantity: int = Field(..., ge=10, le=1000)
+    plan: str = Field(..., pattern="^(free|start|pro|clinic|expert)$")
 
 
 @router.get("/plans")
 def get_plans():
-    return {"plans": PLANS, "packages": PACKAGES}
+    return {"plans": PLANS}
 
 
 @router.get("/subscription")
@@ -111,15 +113,36 @@ async def purchase(
     if not plan_info:
         raise HTTPException(status_code=400, detail="Invalid plan")
 
-    total_price = plan_info["price"] * body.quantity
+    total_price = plan_info["price"]
+    reports_limit = plan_info["reports_limit"]
     order_id = f"odonta_{user.id}_{uuid.uuid4().hex[:8]}"
 
+    # Free plan — activate immediately
+    if body.plan == "free":
+        sub = Subscription(
+            user_id=user.id,
+            plan=body.plan,
+            reports_total=reports_limit,
+            reports_used=0,
+            price_per_report=0,
+            payment_id=order_id,
+            status="active",
+        )
+        db.add(sub)
+        db.commit()
+        return {
+            "order_id": order_id,
+            "total_price": 0,
+            "payment_url": None,
+            "status": "active",
+            "message": f"Бесплатный план активирован: {reports_limit} отчётов",
+        }
+
     # Create Tinkoff payment
-    # TODO: Replace with real Tinkoff terminal key
     terminal_key = settings.tinkoff_terminal_key if hasattr(settings, 'tinkoff_terminal_key') else ""
 
     if terminal_key:
-        payment_url = await _create_tinkoff_payment(terminal_key, order_id, total_price, body.plan, body.quantity)
+        payment_url = await _create_tinkoff_payment(terminal_key, order_id, total_price, body.plan, reports_limit)
     else:
         # Demo mode — auto-activate
         payment_url = None
@@ -127,9 +150,9 @@ async def purchase(
     sub = Subscription(
         user_id=user.id,
         plan=body.plan,
-        reports_total=body.quantity,
+        reports_total=reports_limit,
         reports_used=0,
-        price_per_report=plan_info["price"],
+        price_per_report=round(total_price / reports_limit),
         payment_id=order_id,
         status="active" if not payment_url else "pending",
     )
@@ -141,7 +164,7 @@ async def purchase(
         "total_price": total_price,
         "payment_url": payment_url,
         "status": sub.status,
-        "message": f"Подписка активирована: {body.quantity} отчётов по {plan_info['price']}₽" if not payment_url else "Перейдите к оплате",
+        "message": f"Подписка {plan_info['name']} активирована: {reports_limit} отчётов/мес" if not payment_url else "Перейдите к оплате",
     }
 
 

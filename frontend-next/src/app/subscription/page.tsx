@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CreditCard, Check, Zap, Shield, Star, Package } from "lucide-react";
+import { CreditCard, Check, Zap, Shield, Star, Package, Crown } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { API_BASE } from "@/lib/utils";
@@ -24,20 +24,19 @@ interface SubInfo {
 }
 
 const planIcons: Record<string, React.ElementType> = {
-  hygiene: Zap,
-  hygiene_brushes: Shield,
-  hygiene_perio: Star,
-  all: Package,
+  free: Zap,
+  start: Shield,
+  pro: Star,
+  clinic: Package,
+  expert: Crown,
 };
 
 function SubscriptionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [plans, setPlans] = useState<Record<string, Plan>>({});
-  const [packages] = useState([10, 50, 100]);
   const [sub, setSub] = useState<SubInfo | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState("hygiene");
-  const [selectedQty, setSelectedQty] = useState(50);
+  const [selectedPlan, setSelectedPlan] = useState("start");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -66,7 +65,7 @@ function SubscriptionContent() {
       const resp = await fetch(`${API_BASE}/api/subscription/purchase`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ plan: selectedPlan, quantity: selectedQty }),
+        body: JSON.stringify({ plan: selectedPlan }),
       });
       const data = await resp.json();
       if (data.payment_url) {
@@ -82,17 +81,16 @@ function SubscriptionContent() {
   };
 
   const plan = plans[selectedPlan];
-  const total = plan ? plan.price * selectedQty : 0;
 
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-8 sm:px-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <CreditCard className="h-6 w-6 text-primary" /> Подписка
           </h1>
-          <p className="text-sm text-muted">Выберите план и количество отчётов</p>
+          <p className="text-sm text-muted">Выберите план для вашей практики</p>
         </motion.div>
 
         {/* Current subscription */}
@@ -111,10 +109,11 @@ function SubscriptionContent() {
         )}
 
         {/* Plans */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-6">
           {Object.entries(plans).map(([key, p], i) => {
             const Icon = planIcons[key] || Zap;
             const isSelected = selectedPlan === key;
+            const isPro = key === "pro";
             return (
               <motion.div
                 key={key}
@@ -122,15 +121,22 @@ function SubscriptionContent() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 onClick={() => setSelectedPlan(key)}
-                className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${
+                className={`relative cursor-pointer rounded-2xl border-2 p-5 transition-all flex flex-col ${
                   isSelected ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "border-card-border bg-card hover:border-primary/30"
                 }`}
               >
+                {isPro && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-3 py-0.5 text-[10px] font-bold text-amber-900 whitespace-nowrap">
+                    Хит продаж
+                  </div>
+                )}
                 <Icon className={`h-8 w-8 mb-3 ${isSelected ? "text-primary" : "text-muted"}`} />
                 <h3 className="font-semibold text-sm">{p.name}</h3>
-                <p className="text-2xl font-bold mt-1">{p.price} ₽<span className="text-xs text-muted font-normal"> /отчёт</span></p>
-                <ul className="mt-3 space-y-1">
-                  {p.features.map((f) => (
+                <p className="text-2xl font-bold mt-1">
+                  {p.price === 0 ? "Бесплатно" : <>{p.price.toLocaleString()} ₽<span className="text-xs text-muted font-normal"> /мес</span></>}
+                </p>
+                <ul className="mt-3 space-y-1 flex-1">
+                  {p.features.map((f: string) => (
                     <li key={f} className="flex items-center gap-1.5 text-xs text-muted">
                       <Check className="h-3 w-3 text-success shrink-0" /> {f}
                     </li>
@@ -141,45 +147,21 @@ function SubscriptionContent() {
           })}
         </div>
 
-        {/* Quantity */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-          className="rounded-2xl border border-card-border bg-card p-5 mb-6"
-        >
-          <p className="font-semibold mb-3">Количество отчётов</p>
-          <div className="flex gap-3">
-            {packages.map((qty) => (
-              <button key={qty} onClick={() => setSelectedQty(qty)}
-                className={`flex-1 rounded-xl py-3 text-center font-bold transition-all ${
-                  selectedQty === qty ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-slate-100 text-muted hover:bg-slate-200"
-                }`}
-              >
-                {qty}
-              </button>
-            ))}
-            <input
-              type="number" min={10} max={1000} value={selectedQty}
-              onChange={(e) => setSelectedQty(Math.max(10, parseInt(e.target.value) || 10))}
-              className="w-24 rounded-xl border border-card-border px-3 py-2 text-center text-sm font-bold outline-none focus:border-primary"
-            />
-          </div>
-        </motion.div>
-
         {/* Summary + Buy */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
           className="rounded-2xl border border-card-border bg-card p-5"
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm text-muted">Итого</p>
-              <p className="text-3xl font-bold">{total.toLocaleString()} ₽</p>
-              <p className="text-xs text-muted">{selectedQty} отчётов × {plan?.price || 0} ₽</p>
+              <p className="text-sm text-muted">{plan?.name || "Выберите план"}</p>
+              <p className="text-3xl font-bold">{plan ? (plan.price === 0 ? "Бесплатно" : `${plan.price.toLocaleString()} ₽/мес`) : "—"}</p>
             </div>
             <motion.button
               whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               onClick={handlePurchase} disabled={loading}
               className="rounded-xl bg-primary px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 disabled:opacity-50"
             >
-              {loading ? "Обработка..." : "Оплатить"}
+              {loading ? "Обработка..." : plan?.price === 0 ? "Активировать" : "Оплатить"}
             </motion.button>
           </div>
           {message && <p className="text-sm text-success font-medium">{message}</p>}

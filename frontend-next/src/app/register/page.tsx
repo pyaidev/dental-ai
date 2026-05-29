@@ -55,10 +55,19 @@ export default function RegisterPage() {
   const inputIconClass = "w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm outline-none transition-all focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/10";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      {/* Navbar */}
+      <nav className="border-b border-gray-100 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+          <a href="/" className="flex items-center"><img src="/logo.png" alt="Odonta Index AI" className="h-14" /></a>
+          <a href="/login" className="rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700">Войти</a>
+        </div>
+      </nav>
+
+      <div className="flex flex-1 items-center justify-center px-4 py-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <img src="/logo.png" alt="Odonta Index AI" className="mx-auto mb-2 h-10" />
+          <img src="/logo.png" alt="Odonta Index AI" className="mx-auto mb-2 h-16" />
           <p className="text-sm text-gray-400">Создайте аккаунт стоматологической команды</p>
         </div>
 
@@ -174,6 +183,19 @@ export default function RegisterPage() {
           Уже есть аккаунт? <Link href="/login" className="text-cyan-600 hover:underline">Войти</Link>
         </p>
       </motion.div>
+    </div>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-100 bg-white py-6">
+        <div className="mx-auto max-w-6xl px-6 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-gray-400 mb-3">
+            <a href="/privacy" className="hover:text-cyan-600 transition-colors">Политика обработки ПД</a>
+            <a href="/terms" className="hover:text-cyan-600 transition-colors">Пользовательское соглашение</a>
+            <a href="/consent" className="hover:text-cyan-600 transition-colors">Согласие на обработку ПД</a>
+          </div>
+          <p className="text-[11px] text-gray-300">ИП Коростелев А.А. · ИНН: 312334497069 · © 2026 Odonta Index AI</p>
+        </div>
+      </footer>
     </div>
   );
 }
