@@ -63,6 +63,7 @@ function AnalyzeContent() {
     }
   }, [router, searchParams]);
   const [editing, setEditing] = useState(false);
+  const [editingRecs, setEditingRecs] = useState(false);
   const [editPctFront, setEditPctFront] = useState(0);
   const [editPctRight, setEditPctRight] = useState(0);
   const [editPctLeft, setEditPctLeft] = useState(0);
@@ -112,10 +113,22 @@ function AnalyzeContent() {
   });
   const [autoDetect, setAutoDetect] = useState<{ has_braces: boolean; has_implants: boolean; confidence: number } | null>(null);
   const [detecting, setDetecting] = useState(false);
+  const [detectResults, setDetectResults] = useState<Record<string, { has_braces: boolean; has_implants: boolean; confidence: number }>>({});
 
   const handlePhotoWithDetect = async (position: "front" | "right" | "left", file: File | null) => {
     setPhotos((p) => ({ ...p, [position]: file }));
-    if (!file) return;
+    if (!file) {
+      const newResults = { ...detectResults };
+      delete newResults[position];
+      setDetectResults(newResults);
+      // Recalculate from remaining
+      const vals = Object.values(newResults);
+      const anyBraces = vals.some(v => v.has_braces);
+      const anyImplants = vals.some(v => v.has_implants);
+      const maxConf = vals.length > 0 ? Math.max(...vals.map(v => v.confidence)) : 0;
+      setAutoDetect(vals.length > 0 ? { has_braces: anyBraces, has_implants: anyImplants, confidence: maxConf } : null);
+      return;
+    }
     setDetecting(true);
     try {
       const token = localStorage.getItem("dental_token");
@@ -128,9 +141,16 @@ function AnalyzeContent() {
       });
       if (resp.ok) {
         const data = await resp.json();
-        setAutoDetect(data);
-        if (data.has_braces) setHasBraces(true);
-        if (data.has_implants) setHasImplants(true);
+        const newResults = { ...detectResults, [position]: data };
+        setDetectResults(newResults);
+        // Combine all results — if ANY photo has braces, mark as braces
+        const vals = Object.values(newResults);
+        const anyBraces = vals.some(v => v.has_braces);
+        const anyImplants = vals.some(v => v.has_implants);
+        const maxConf = Math.max(...vals.map(v => v.confidence));
+        setAutoDetect({ has_braces: anyBraces, has_implants: anyImplants, confidence: maxConf });
+        if (anyBraces) setHasBraces(true);
+        if (anyImplants) setHasImplants(true);
       }
     } catch {}
     setDetecting(false);
@@ -523,14 +543,14 @@ function AnalyzeContent() {
                     PDF
                   </motion.a>
                   <motion.a
-                    href={`https://wa.me/?text=${encodeURIComponent(`Отчёт о гигиене полости рта: ${window.location.origin}/report/${result.access_token}`)}`}
+                    href={`https://max.ru/id312334497069_bot`}
                     target="_blank"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white"
+                    className="flex items-center gap-2 rounded-xl bg-[#7B68EE] px-4 py-2.5 text-sm font-semibold text-white"
                   >
-                    <Share2 className="h-4 w-4" />
-                    WhatsApp
+                    <MessageCircle className="h-4 w-4" />
+                    Max
                   </motion.a>
                   <motion.a
                     href={`https://t.me/share/url?url=${encodeURIComponent(`${window.location.origin}/report/${result.access_token}`)}&text=${encodeURIComponent('Отчёт о гигиене полости рта')}`}
@@ -601,8 +621,8 @@ function AnalyzeContent() {
                         <label className="text-xs text-amber-700 block mb-1">Рекомендации</label>
                         <textarea
                           value={editRecs} onChange={(e) => setEditRecs(e.target.value)}
-                          rows={5}
-                          className="w-full rounded-lg border border-amber-300 px-3 py-2 text-sm resize-none"
+                          rows={12}
+                          className="w-full rounded-lg border border-amber-300 px-3 py-2 text-sm resize-y"
                         />
                       </div>
                       <motion.button
@@ -758,17 +778,78 @@ function AnalyzeContent() {
                 />
               </motion.div>
 
-              {/* Recommendations */}
+              {/* Recommendations — editable */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
                 className="rounded-2xl border border-card-border bg-card p-5"
               >
-                <h2 className="mb-3 text-base font-semibold">Рекомендации</h2>
-                <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80 font-sans">
-                  {result.recommendations}
-                </pre>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-base font-semibold">Рекомендации</h2>
+                  {!editingRecs ? (
+                    <button
+                      onClick={() => { setEditingRecs(true); setEditRecs(result.recommendations); }}
+                      className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Редактировать
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setEditingRecs(false)}
+                        className="text-xs text-muted hover:text-foreground transition-colors"
+                      >
+                        Отмена
+                      </button>
+                      <button
+                        disabled={saving}
+                        onClick={async () => {
+                          setSaving(true);
+                          try {
+                            const token = localStorage.getItem("dental_token");
+                            const resp = await fetch(`${API_BASE}/api/analysis/${result.id}/correct`, {
+                              method: "PUT",
+                              headers: {
+                                "Content-Type": "application/json",
+                                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                              },
+                              body: JSON.stringify({
+                                plaque_pct_front: result.plaque_pct_front,
+                                plaque_pct_right: result.plaque_pct_right,
+                                plaque_pct_left: result.plaque_pct_left,
+                                recommendations: editRecs,
+                              }),
+                            });
+                            if (resp.ok) {
+                              const updated = await resp.json();
+                              setResult({ ...result, recommendations: updated.recommendations });
+                              setEditingRecs(false);
+                            }
+                          } catch {}
+                          setSaving(false);
+                        }}
+                        className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white"
+                      >
+                        <Save className="h-3.5 w-3.5" />
+                        {saving ? "..." : "Сохранить"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {editingRecs ? (
+                  <textarea
+                    value={editRecs}
+                    onChange={(e) => setEditRecs(e.target.value)}
+                    rows={15}
+                    className="w-full rounded-xl border border-primary/30 bg-primary/[0.03] px-4 py-3 text-sm leading-relaxed font-sans resize-y outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                    autoFocus
+                  />
+                ) : (
+                  <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80 font-sans">
+                    {result.recommendations}
+                  </pre>
+                )}
               </motion.div>
             </motion.div>
           )}
