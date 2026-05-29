@@ -212,9 +212,20 @@ async def analyze(
                 active_sub.status = "expired"
             db.commit()
 
+    # Fetch chart data for PDF
+    from app.models import InterdentalChart, PeriodontalChart
+    import json as _json
+    interdental_chart = db.query(InterdentalChart).filter(InterdentalChart.patient_id == patient.id).order_by(InterdentalChart.created_at.desc()).first()
+    periodontal_chart = db.query(PeriodontalChart).filter(PeriodontalChart.patient_id == patient.id).order_by(PeriodontalChart.created_at.desc()).first()
+
     # Generate PDF
     pdf_path = str(Path(settings.results_dir) / f"{analysis_id}_report.pdf")
-    generate_pdf(analysis, patient, doctor, clinic, indices, pdf_path)
+    generate_pdf(
+        analysis, patient, doctor, clinic, indices, pdf_path,
+        interdental_data=_json.loads(interdental_chart.data) if interdental_chart else None,
+        interdental_brand=interdental_chart.brand if interdental_chart else None,
+        periodontal_data=_json.loads(periodontal_chart.data) if periodontal_chart else None,
+    )
     analysis.pdf_path = pdf_path
     db.commit()
 

@@ -265,7 +265,156 @@
     </div>
 </div>
 
-<!-- PAGE 3: History & Schedule -->
+<!-- PAGE: Interdental Chart (Ёршикограмма) -->
+{% if interdental %}
+<div class="page">
+    <div class="header">
+        <div>
+            {% if logo_b64 %}
+            <img src="{{ logo_b64 }}" class="header-logo" alt="Logo">
+            {% endif %}
+        </div>
+        <div class="clinic-info">
+            {% if clinic %}
+            <div class="clinic-name">{{ clinic.name }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <h2 style="font-size: 14px; margin-bottom: 5px;">Ёршикограмма — Подбор межзубных ёршиков</h2>
+    <p style="font-size: 9px; color: #666; margin-bottom: 10px;">
+        Бренд: <strong>{% if interdental_brand == 'tepe' %}TePe{% elif interdental_brand == 'pesitro' %}Pesitro{% else %}Curaprox{% endif %}</strong>
+        · Пациент: {{ patient.fio }}
+    </p>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 15px;">
+        <thead>
+            <tr style="background: #f1f5f9;">
+                <th style="padding: 5px 8px; text-align: left; border-bottom: 1px solid #ddd;">Промежуток</th>
+                <th style="padding: 5px 8px; text-align: center; border-bottom: 1px solid #ddd;">Размер</th>
+                <th style="padding: 5px 8px; text-align: left; border-bottom: 1px solid #ddd;">Ёршик для покупки</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pair, size in interdental.items() %}
+            <tr>
+                <td style="padding: 4px 8px; border-bottom: 1px solid #eee;">Зубы {{ pair }}</td>
+                <td style="padding: 4px 8px; text-align: center; border-bottom: 1px solid #eee; font-weight: bold;">{{ size }}</td>
+                <td style="padding: 4px 8px; border-bottom: 1px solid #eee; color: #0891b2;">
+                    {% if interdental_brand == 'tepe' %}
+                        {% if size == '0.4mm' %}TePe Pink (0.4){% elif size == '0.45mm' %}TePe Orange (0.45){% elif size == '0.5mm' %}TePe Red (0.5){% elif size == '0.6mm' %}TePe Blue (0.6){% elif size == '0.7mm' %}TePe Yellow (0.7){% elif size == '0.8mm' %}TePe Green (0.8){% elif size == '1.1mm' %}TePe Purple (1.1){% elif size == '1.3mm' %}TePe Grey (1.3){% else %}{{ size }}{% endif %}
+                    {% elif interdental_brand == 'pesitro' %}
+                        {% if size == '0.4mm' %}Pesitro XXS{% elif size == '0.45mm' %}Pesitro XS{% elif size == '0.5mm' %}Pesitro S{% elif size == '0.6mm' %}Pesitro S/M{% elif size == '0.7mm' %}Pesitro M{% elif size == '0.8mm' %}Pesitro M/L{% elif size == '1.1mm' %}Pesitro L{% elif size == '1.3mm' %}Pesitro XL{% else %}{{ size }}{% endif %}
+                    {% else %}
+                        {% if size == '0.4mm' %}Curaprox CPS 08{% elif size == '0.45mm' %}Curaprox CPS 09{% elif size == '0.5mm' %}Curaprox CPS 07{% elif size == '0.6mm' %}Curaprox CPS 011{% elif size == '0.7mm' %}Curaprox CPS 09{% elif size == '0.8mm' %}Curaprox CPS 011{% elif size == '1.1mm' %}Curaprox CPS 112{% elif size == '1.3mm' %}Curaprox CPS 114{% else %}{{ size }}{% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 10px; font-size: 9px;">
+        <strong style="color: #0891b2;">Как пользоваться ёршиками:</strong>
+        <ul style="margin: 5px 0 0 15px; color: #555;">
+            <li>Используйте ёршик указанного размера для каждого промежутка</li>
+            <li>Вводите ёршик аккуратно, не прилагая усилий</li>
+            <li>Делайте 2-3 возвратно-поступательных движения</li>
+            <li>Применяйте ежедневно перед чисткой зубов</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <div>Odonta Index AI — Ёршикограмма</div>
+        <div class="disclaimer">ИП Коростелев А.А. · ИНН: 312334497069 · odontaindex.ru</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- PAGE: Periodontal Chart (Пародонтограмма) -->
+{% if periodontal %}
+<div class="page">
+    <div class="header">
+        <div>
+            {% if logo_b64 %}
+            <img src="{{ logo_b64 }}" class="header-logo" alt="Logo">
+            {% endif %}
+        </div>
+        <div class="clinic-info">
+            {% if clinic %}
+            <div class="clinic-name">{{ clinic.name }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <h2 style="font-size: 14px; margin-bottom: 5px;">Пародонтограмма</h2>
+    <p style="font-size: 9px; color: #666; margin-bottom: 10px;">Пациент: {{ patient.fio }}</p>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 8px; margin-bottom: 10px;">
+        <thead>
+            <tr style="background: #f1f5f9;">
+                <th style="padding: 4px 6px; border-bottom: 1px solid #ddd;">Зуб</th>
+                <th style="padding: 4px 6px; border-bottom: 1px solid #ddd; text-align: center;">Вестибулярно</th>
+                <th style="padding: 4px 6px; border-bottom: 1px solid #ddd; text-align: center;">Орально</th>
+                <th style="padding: 4px 6px; border-bottom: 1px solid #ddd; text-align: center;">Кров.</th>
+                <th style="padding: 4px 6px; border-bottom: 1px solid #ddd; text-align: center;">Подв.</th>
+                <th style="padding: 4px 6px; border-bottom: 1px solid #ddd; text-align: center;">Рецес.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tooth, vals in periodontal.items() %}
+            <tr>
+                <td style="padding: 3px 6px; border-bottom: 1px solid #eee; font-weight: bold;">{{ tooth }}</td>
+                <td style="padding: 3px 6px; border-bottom: 1px solid #eee; text-align: center;">
+                    {% for pd in vals.get('buccal', []) %}
+                    <span style="{% if pd >= 4 %}color: #ef4444; font-weight: bold;{% endif %}">{{ pd }}</span>{% if not loop.last %}-{% endif %}
+                    {% endfor %}
+                </td>
+                <td style="padding: 3px 6px; border-bottom: 1px solid #eee; text-align: center;">
+                    {% for pd in vals.get('lingual', []) %}
+                    <span style="{% if pd >= 4 %}color: #ef4444; font-weight: bold;{% endif %}">{{ pd }}</span>{% if not loop.last %}-{% endif %}
+                    {% endfor %}
+                </td>
+                <td style="padding: 3px 6px; border-bottom: 1px solid #eee; text-align: center;">{% if vals.get('bleeding') %}<span style="color: #ef4444;">●</span>{% else %}—{% endif %}</td>
+                <td style="padding: 3px 6px; border-bottom: 1px solid #eee; text-align: center;">{{ vals.get('mobility', 0) }}</td>
+                <td style="padding: 3px 6px; border-bottom: 1px solid #eee; text-align: center;">{{ vals.get('recession', 0) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% set ns = namespace(deep=0, bleeding=0, total=0) %}
+    {% for tooth, vals in periodontal.items() %}
+        {% set ns.total = ns.total + 1 %}
+        {% for pd in vals.get('buccal', []) + vals.get('lingual', []) %}
+            {% if pd >= 4 %}{% set ns.deep = ns.deep + 1 %}{% endif %}
+        {% endfor %}
+        {% if vals.get('bleeding') %}{% set ns.bleeding = ns.bleeding + 1 %}{% endif %}
+    {% endfor %}
+
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; text-align: center;">
+            <div style="font-size: 18px; font-weight: bold; color: #334155;">{{ ns.total }}</div>
+            <div style="font-size: 8px; color: #94a3b8;">Зубов обследовано</div>
+        </div>
+        <div style="flex: 1; background: {% if ns.deep > 0 %}#fef2f2{% else %}#f0fdf4{% endif %}; border: 1px solid {% if ns.deep > 0 %}#fecaca{% else %}#bbf7d0{% endif %}; border-radius: 8px; padding: 8px; text-align: center;">
+            <div style="font-size: 18px; font-weight: bold; color: {% if ns.deep > 0 %}#ef4444{% else %}#22c55e{% endif %};">{{ ns.deep }}</div>
+            <div style="font-size: 8px; color: #94a3b8;">Глубоких карманов (≥4мм)</div>
+        </div>
+        <div style="flex: 1; background: {% if ns.bleeding > 0 %}#fef2f2{% else %}#f0fdf4{% endif %}; border: 1px solid {% if ns.bleeding > 0 %}#fecaca{% else %}#bbf7d0{% endif %}; border-radius: 8px; padding: 8px; text-align: center;">
+            <div style="font-size: 18px; font-weight: bold; color: {% if ns.bleeding > 0 %}#ef4444{% else %}#22c55e{% endif %};">{{ ns.bleeding }}</div>
+            <div style="font-size: 8px; color: #94a3b8;">Кровоточивость</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div>Odonta Index AI — Пародонтограмма</div>
+        <div class="disclaimer">ИП Коростелев А.А. · ИНН: 312334497069 · odontaindex.ru</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- PAGE: History & Schedule -->
 {% if history|length > 1 or schedule %}
 <div class="page">
     <div class="header">

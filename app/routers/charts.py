@@ -16,7 +16,8 @@ router = APIRouter()
 
 class InterdentalRequest(BaseModel):
     patient_id: int
-    data: dict  # {tooth_pair: brush_size} e.g. {"11-12": "pink_0.4mm", "12-13": "red_0.5mm"}
+    data: dict  # {tooth_pair: brush_size} e.g. {"11-12": "0.4mm", "12-13": "0.5mm"}
+    brand: str = "curaprox"  # curaprox, tepe, pesitro
     notes: str = Field("", max_length=1000)
 
 
@@ -39,19 +40,21 @@ def save_interdental(
 
     if existing:
         existing.data = json.dumps(body.data, ensure_ascii=False)
+        existing.brand = body.brand
         existing.notes = body.notes
         chart = existing
     else:
         chart = InterdentalChart(
             patient_id=body.patient_id,
             data=json.dumps(body.data, ensure_ascii=False),
+            brand=body.brand,
             notes=body.notes,
         )
         db.add(chart)
 
     db.commit()
     db.refresh(chart)
-    return {"id": chart.id, "data": json.loads(chart.data), "notes": chart.notes}
+    return {"id": chart.id, "data": json.loads(chart.data), "brand": chart.brand, "notes": chart.notes}
 
 
 @router.get("/interdental/{patient_id}")
@@ -66,7 +69,7 @@ def get_interdental(
 
     if not chart:
         return {"exists": False}
-    return {"exists": True, "id": chart.id, "data": json.loads(chart.data), "notes": chart.notes}
+    return {"exists": True, "id": chart.id, "data": json.loads(chart.data), "brand": chart.brand or "curaprox", "notes": chart.notes}
 
 
 # ── Periodontal Chart (Parodontogramma) ──

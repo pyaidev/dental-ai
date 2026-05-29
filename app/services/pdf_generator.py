@@ -54,6 +54,9 @@ def generate_pdf(
     output_path: str,
     history: list[dict] | None = None,
     base_url: str = "https://odontaindex.ru",
+    interdental_data: dict | None = None,
+    interdental_brand: str | None = None,
+    periodontal_data: dict | None = None,
 ):
     env = Environment(loader=FileSystemLoader("templates/report"))
     template = env.get_template("report.html")
@@ -127,6 +130,9 @@ def generate_pdf(
         "report_url": report_url,
         "schedule": schedule,
         "history": history or [],
+        "interdental": interdental_data,
+        "interdental_brand": interdental_brand or "curaprox",
+        "periodontal": periodontal_data,
     }
 
     html_content = template.render(**context)

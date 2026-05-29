@@ -5,16 +5,21 @@ import { motion } from "framer-motion";
 import { Save, CheckCircle } from "lucide-react";
 import { API_BASE } from "@/lib/utils";
 
-const BRUSH_SIZES = [
-  { size: "0.4mm", color: "#FF69B4", name: "Розовый" },
-  { size: "0.45mm", color: "#FF4500", name: "Оранжевый" },
-  { size: "0.5mm", color: "#FF0000", name: "Красный" },
-  { size: "0.6mm", color: "#0000FF", name: "Синий" },
-  { size: "0.7mm", color: "#FFFF00", name: "Жёлтый" },
-  { size: "0.8mm", color: "#00FF00", name: "Зелёный" },
-  { size: "1.1mm", color: "#800080", name: "Фиолетовый" },
-  { size: "1.3mm", color: "#808080", name: "Серый" },
+type BrushInfo = { size: string; color: string; name: string; curaprox: string; tepe: string; pesitro: string };
+
+const BRUSH_SIZES: BrushInfo[] = [
+  { size: "0.4mm", color: "#FF69B4", name: "Розовый", curaprox: "CPS 08", tepe: "Pink (0.4)", pesitro: "XXS" },
+  { size: "0.45mm", color: "#FF4500", name: "Оранжевый", curaprox: "CPS 09", tepe: "Orange (0.45)", pesitro: "XS" },
+  { size: "0.5mm", color: "#FF0000", name: "Красный", curaprox: "CPS 07", tepe: "Red (0.5)", pesitro: "S" },
+  { size: "0.6mm", color: "#0000FF", name: "Синий", curaprox: "CPS 011", tepe: "Blue (0.6)", pesitro: "S/M" },
+  { size: "0.7mm", color: "#FFFF00", name: "Жёлтый", curaprox: "CPS 09", tepe: "Yellow (0.7)", pesitro: "M" },
+  { size: "0.8mm", color: "#00FF00", name: "Зелёный", curaprox: "CPS 011", tepe: "Green (0.8)", pesitro: "M/L" },
+  { size: "1.1mm", color: "#800080", name: "Фиолетовый", curaprox: "CPS 112", tepe: "Purple (1.1)", pesitro: "L" },
+  { size: "1.3mm", color: "#808080", name: "Серый", curaprox: "CPS 114", tepe: "Grey (1.3)", pesitro: "XL" },
 ];
+
+const BRANDS = ["curaprox", "tepe", "pesitro"] as const;
+const BRAND_LABELS: Record<string, string> = { curaprox: "Curaprox", tepe: "TePe", pesitro: "Pesitro" };
 
 const TOOTH_PAIRS_UPPER = ["18-17","17-16","16-15","15-14","14-13","13-12","12-11","11-21","21-22","22-23","23-24","24-25","25-26","26-27","27-28"];
 const TOOTH_PAIRS_LOWER = ["48-47","47-46","46-45","45-44","44-43","43-42","42-41","41-31","31-32","32-33","33-34","34-35","35-36","36-37","37-38"];
@@ -25,6 +30,7 @@ interface Props {
 
 export default function InterdentalChart({ patientId }: Props) {
   const [data, setData] = useState<Record<string, string>>({});
+  const [brand, setBrand] = useState<string>("curaprox");
   const [selectedBrush, setSelectedBrush] = useState(BRUSH_SIZES[0].size);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -33,7 +39,7 @@ export default function InterdentalChart({ patientId }: Props) {
     const token = localStorage.getItem("dental_token");
     if (!token || !patientId) return;
     fetch(`${API_BASE}/api/interdental/${patientId}`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json()).then(d => { if (d.exists) setData(d.data); });
+      .then(r => r.json()).then(d => { if (d.exists) { setData(d.data); if (d.brand) setBrand(d.brand); } });
   }, [patientId]);
 
   const togglePair = (pair: string) => {
@@ -53,7 +59,7 @@ export default function InterdentalChart({ patientId }: Props) {
     await fetch(`${API_BASE}/api/interdental`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ patient_id: patientId, data, notes: "" }),
+      body: JSON.stringify({ patient_id: patientId, data, brand, notes: "" }),
     });
     setSaved(true);
     setSaving(false);
@@ -67,16 +73,30 @@ export default function InterdentalChart({ patientId }: Props) {
     >
       <h2 className="font-semibold mb-4 text-primary">Ёршикограмма</h2>
 
+      {/* Brand selector */}
+      <div className="flex gap-2 mb-3">
+        {BRANDS.map(b => (
+          <button key={b} onClick={() => { setBrand(b); setSaved(false); }}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+              brand === b ? "bg-primary text-white shadow-sm" : "bg-slate-100 text-muted hover:bg-slate-200"
+            }`}
+          >
+            {BRAND_LABELS[b]}
+          </button>
+        ))}
+      </div>
+
       {/* Brush selector */}
       <div className="flex flex-wrap gap-1.5 mb-4">
         {BRUSH_SIZES.map(b => (
           <button key={b.size} onClick={() => setSelectedBrush(b.size)}
-            className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs transition-all ${
               selectedBrush === b.size ? "ring-2 ring-primary bg-slate-50" : "hover:bg-slate-50"
             }`}
           >
-            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: b.color }} />
-            {b.size}
+            <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: b.color }} />
+            <span>{b.size}</span>
+            <span className="text-[10px] text-muted">{b[brand as keyof BrushInfo]}</span>
           </button>
         ))}
       </div>

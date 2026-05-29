@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+import json as _json
+
 from app.database import get_db
-from app.models import Analysis, Patient, Doctor, Clinic, AdminUser
+from app.models import Analysis, Patient, Doctor, Clinic, AdminUser, InterdentalChart, PeriodontalChart
 from app.services.index_calculator import calculate_indices
 from app.services.pdf_generator import generate_pdf
 from app.routers.auth import get_current_user
@@ -75,8 +77,16 @@ def correct_analysis(
         analysis.plaque_pct_left,
     )
 
+    interdental_chart = db.query(InterdentalChart).filter(InterdentalChart.patient_id == analysis.patient_id).order_by(InterdentalChart.created_at.desc()).first()
+    periodontal_chart = db.query(PeriodontalChart).filter(PeriodontalChart.patient_id == analysis.patient_id).order_by(PeriodontalChart.created_at.desc()).first()
+
     pdf_path = analysis.pdf_path or f"results/{analysis_id}_report.pdf"
-    generate_pdf(analysis, patient, doctor, clinic, indices, pdf_path)
+    generate_pdf(
+        analysis, patient, doctor, clinic, indices, pdf_path,
+        interdental_data=_json.loads(interdental_chart.data) if interdental_chart else None,
+        interdental_brand=interdental_chart.brand if interdental_chart else None,
+        periodontal_data=_json.loads(periodontal_chart.data) if periodontal_chart else None,
+    )
     analysis.pdf_path = pdf_path
 
     db.commit()

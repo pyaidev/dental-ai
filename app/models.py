@@ -106,6 +106,7 @@ class InterdentalChart(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), nullable=False)
     data: Mapped[str] = mapped_column(Text)  # JSON: {tooth_pair: brush_size}
+    brand: Mapped[str | None] = mapped_column(String(50), default="curaprox")
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
