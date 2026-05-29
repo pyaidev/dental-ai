@@ -53,7 +53,7 @@ def generate_pdf(
     indices: DentalIndices,
     output_path: str,
     history: list[dict] | None = None,
-    base_url: str = "http://localhost:3000",
+    base_url: str = "https://odontaindex.ru",
 ):
     env = Environment(loader=FileSystemLoader("templates/report"))
     template = env.get_template("report.html")
