@@ -28,9 +28,16 @@ const plans = [
   { name: "Expert", price: 9990, priceLabel: "9 990 ₽/мес", sub: "Для медицинских центров", features: ["500 отчётов в месяц", "Все функции Clinic", "Аналитика по врачам", "Рейтинг врачей", "Управленческий отчёт"], popular: false },
 ];
 
-const experts = [
+const ambassadors = [
   { name: "Коростелев А.А.", role: "Основатель, стоматолог-гигиенист", quote: "AI помогает стандартизировать оценку гигиены и давать пациентам понятные рекомендации" },
   { name: "Чапурова Г.Ш.", role: "Гигиенист-стоматологический", quote: "Автоматические напоминания значительно повышают комплаенс пациентов" },
+];
+
+const reviews = [
+  { name: "Мария К.", role: "Стоматолог-терапевт, Москва", quote: "Раньше тратила 15 минут на объяснения пациенту, теперь показываю отчёт Odonta — всё наглядно и понятно. Пациенты сами начинают следить за гигиеной.", stars: 5 },
+  { name: "Алексей Д.", role: "Гигиенист, клиника «Дентал Плюс»", quote: "Индексы считаются автоматически — не нужно вручную заполнять таблицы. Экономлю по 10 минут на каждом приёме.", stars: 5 },
+  { name: "Елена В.", role: "Детский стоматолог, Санкт-Петербург", quote: "Дети в восторге от визуализации! Показываю им где налёт — и они сразу понимают, зачем чистить зубы. Родители тоже довольны отчётами.", stars: 5 },
+  { name: "Ирина С.", role: "Ортодонт, Екатеринбург", quote: "Для пациентов с брекетами — незаменимый инструмент. Видно все проблемные зоны, и пациент получает конкретные рекомендации по ёршикам.", stars: 5 },
 ];
 
 export default function LandingPage() {
@@ -228,22 +235,64 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* EXPERTS */}
+      {/* REVIEWS */}
       <section className="py-24">
         <div className="mx-auto max-w-6xl px-6">
           <FadeUp>
             <div className="text-center mb-16">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0891b2] mb-3">Эксперты</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0891b2] mb-3">Отзывы</p>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
-                Разработано стоматологами
+                Что говорят врачи
               </h2>
+              <p className="mt-3 text-gray-500">Более 100 стоматологов уже используют Odonta Index AI</p>
+            </div>
+          </FadeUp>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {reviews.map((review, i) => (
+              <FadeUp key={review.name} delay={i * 0.1}>
+                <div className="rounded-2xl bg-white p-7 border border-gray-100 shadow-sm hover:shadow-md transition-shadow h-full">
+                  <div className="flex gap-0.5 mb-4">
+                    {Array.from({ length: review.stars }).map((_, j) => (
+                      <span key={j} className="text-amber-400 text-lg">&#9733;</span>
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-5 italic">
+                    &laquo;{review.quote}&raquo;
+                  </p>
+                  <div className="flex items-center gap-3 mt-auto">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0891b2]/10 text-sm font-bold text-[#0891b2]">
+                      {review.name.split(" ").map(n => n[0]).join("")}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{review.name}</p>
+                      <p className="text-xs text-gray-400">{review.role}</p>
+                    </div>
+                  </div>
+                </div>
+              </FadeUp>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* AMBASSADORS */}
+      <section className="py-24 bg-[#f8fafb]">
+        <div className="mx-auto max-w-6xl px-6">
+          <FadeUp>
+            <div className="text-center mb-16">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0891b2] mb-3">Амбассадоры</p>
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
+                Наши амбассадоры
+              </h2>
+              <p className="mt-3 text-gray-500">Эксперты, которые доверяют Odonta Index AI</p>
             </div>
           </FadeUp>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {experts.map((expert, i) => (
+            {ambassadors.map((expert, i) => (
               <FadeUp key={expert.name} delay={i * 0.15}>
-                <div className="rounded-2xl bg-[#f8fafb] p-8 border border-gray-100">
+                <div className="rounded-2xl bg-white p-8 border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-4 mb-5">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0891b2]/10 text-lg font-bold text-[#0891b2]">
                       {expert.name.split(" ").map(n => n[0]).join("")}
