@@ -33,7 +33,7 @@ export default function SettingsPage() {
   const [position, setPosition] = useState("");
   const [tgEnabled, setTgEnabled] = useState(false);
   const [waEnabled, setWaEnabled] = useState(false);
-  const [tgBotUsername, setTgBotUsername] = useState("OdontaIndexBot");
+  const [tgBotUsername, setTgBotUsername] = useState("OdontaAI_bot");
   const [controlReminder, setControlReminder] = useState(true);
   const [plannedReminder, setPlannedReminder] = useState(true);
   const [reminderText, setReminderText] = useState("Здравствуйте! Подошло время плановой профессиональной гигиены полости рта. Врач ждёт вас!");
@@ -308,7 +308,11 @@ export default function SettingsPage() {
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
                   className="pt-3 pl-13"
                 >
-                  <p className="text-xs text-muted mb-2">Бот: <span className="font-mono text-foreground">@{tgBotUsername}</span></p>
+                  <p className="text-xs text-muted mb-2">Бот: <a href="https://t.me/OdontaAI_bot" target="_blank" className="font-mono text-primary hover:underline">@OdontaAI_bot</a></p>
+                  <a href="https://t.me/OdontaAI_bot" target="_blank"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0088cc]/10 px-3 py-1.5 text-xs font-medium text-[#0088cc] hover:bg-[#0088cc]/20 transition-colors mb-2">
+                    Открыть бот в Telegram
+                  </a>
                   <p className="text-xs text-muted">Пациент должен написать боту /start, чтобы получать уведомления</p>
                 </motion.div>
               )}
@@ -335,7 +339,11 @@ export default function SettingsPage() {
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
                   className="pt-1 pl-13"
                 >
-                  <p className="text-xs text-muted">VK Max API будет подключён после настройки бота</p>
+                  <a href="https://max.ru/id312334497069_bot" target="_blank"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366]/10 px-3 py-1.5 text-xs font-medium text-[#25D366] hover:bg-[#25D366]/20 transition-colors mb-2">
+                    Открыть бот в Max
+                  </a>
+                  <p className="text-xs text-muted">Пациент должен написать боту /start, чтобы получать уведомления</p>
                 </motion.div>
               )}
             </div>

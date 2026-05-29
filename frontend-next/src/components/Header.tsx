@@ -34,7 +34,7 @@ export default function Header() {
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5 sm:px-8">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="Odonta Index AI" className="h-14" />
+          <img src="/logo.png" alt="Odonta Index AI" className="h-16" />
         </Link>
 
         <nav className="flex items-center gap-0.5">

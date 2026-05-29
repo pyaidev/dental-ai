@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, UserPlus, Stethoscope, Building2, Phone } from "lucide-react";
 import Link from "next/link";
 import { API_BASE } from "@/lib/utils";
+import PhoneInput from "@/components/PhoneInput";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -110,9 +111,8 @@ export default function RegisterPage() {
                 <label className="mb-1 block text-xs font-medium text-gray-600">Телефон</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300" />
-                  <input type="tel" value={form.phone}
-                    onChange={(e) => { const d = e.target.value.replace(/[^\d+\s()-]/g, ""); update("phone", d); }}
-                    placeholder="+7 (___) ___-__-__" className={inputIconClass} maxLength={18} />
+                  <PhoneInput value={form.phone} onChange={(v) => update("phone", v)}
+                    className={inputIconClass} />
                 </div>
               </div>
             </div>
