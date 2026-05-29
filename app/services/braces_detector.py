@@ -8,6 +8,22 @@ from PIL import Image
 BRACES_MODEL_PATH = Path("ml/runs/dental_braces_v1/weights/best.pt")
 BRACES_CLS_MODEL_PATH = Path("ml/runs/braces_cls/v1/weights/best.pt")
 
+_cached_clip = None
+
+def _detect_clip(image_path: str) -> dict:
+    """Detect braces using CLIP zero-shot classification. Works on all photos including stained."""
+    global _cached_clip
+    if _cached_clip is None:
+        from transformers import pipeline
+        _cached_clip = pipeline("zero-shot-image-classification", model="openai/clip-vit-base-patch32")
+    from PIL import Image
+    img = Image.open(image_path).convert("RGB")
+    labels = ["dental braces orthodontic brackets on teeth", "teeth without braces clean mouth"]
+    result = _cached_clip(img, candidate_labels=labels)
+    has_braces = result[0]["label"] == labels[0]
+    confidence = result[0]["score"]
+    return {"has_braces": has_braces, "has_implants": False, "confidence": round(confidence, 2)}
+
 
 def is_braces_model_available() -> bool:
     return BRACES_MODEL_PATH.exists() or BRACES_CLS_MODEL_PATH.exists()
@@ -45,7 +61,15 @@ def detect_braces_implants(image_path: str) -> dict:
               3) HSV fallback (only non-stained photos)
     Returns: {"has_braces": bool, "has_implants": bool, "confidence": float}
     """
-    # 1. Try classification model (best for stained photos)
+    # 1. Try CLIP zero-shot classification (best — works on all photos)
+    try:
+        clip_result = _detect_clip(image_path)
+        if clip_result["confidence"] > 0.6:
+            return clip_result
+    except Exception:
+        pass
+
+    # 2. Try YOLO classification model
     if BRACES_CLS_MODEL_PATH.exists():
         try:
             cls_result = _detect_cls(image_path)
@@ -54,7 +78,7 @@ def detect_braces_implants(image_path: str) -> dict:
         except Exception:
             pass
 
-    # 2. Try YOLO detection model
+    # 3. Try YOLO detection model
     yolo_result = {"has_braces": False, "has_implants": False, "confidence": 0}
     if BRACES_MODEL_PATH.exists():
         try:
