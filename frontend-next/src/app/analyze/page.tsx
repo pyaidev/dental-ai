@@ -427,39 +427,48 @@ function AnalyzeContent() {
                   className="rounded-2xl border border-card-border bg-card p-5"
                 >
                   <h2 className="mb-4 font-semibold text-primary">Фотографии зубов *</h2>
-                  <div className="grid grid-cols-3 gap-4">
-                    <PhotoUpload label="Правая сторона" name="photo_right" onChange={(f) => handlePhotoWithDetect("right", f)} />
-                    <PhotoUpload label="Фронтальная" name="photo_front" onChange={(f) => handlePhotoWithDetect("front", f)} />
-                    <PhotoUpload label="Левая сторона" name="photo_left" onChange={(f) => handlePhotoWithDetect("left", f)} />
+                  <div className="grid grid-cols-3 gap-3">
+                    {([
+                      { key: "right" as const, label: "Правая сторона" },
+                      { key: "front" as const, label: "Фронтальная" },
+                      { key: "left" as const, label: "Левая сторона" },
+                    ]).map(({ key, label }) => {
+                      const dr = detectResults[key];
+                      return (
+                        <div key={key}>
+                          <PhotoUpload label={label} name={`photo_${key}`} onChange={(f) => handlePhotoWithDetect(key, f)} />
+                          {dr && (
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                              className={`mt-1.5 rounded-lg px-2.5 py-1.5 text-center text-[11px] font-medium ${
+                                dr.has_braces ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-green-50 text-green-700 border border-green-200"
+                              }`}>
+                              {dr.has_braces ? `Брекеты ${Math.round(dr.confidence * 100)}%` : `Нет брекетов ${Math.round(dr.confidence * 100)}%`}
+                            </motion.div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
 
-                  {/* AI auto-detect banner — right after photos */}
+                  {/* AI detecting spinner */}
                   {detecting && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      className="mt-4 flex items-center gap-3 rounded-xl bg-cyan-50 border border-cyan-200 px-4 py-3">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
-                      <div>
-                        <p className="text-sm font-medium text-cyan-700">AI анализирует фото...</p>
-                        <p className="text-xs text-cyan-500">Определяем брекеты и импланты</p>
-                      </div>
+                      className="mt-3 flex items-center gap-2 text-xs text-cyan-600">
+                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+                      AI анализирует...
                     </motion.div>
                   )}
-                  {autoDetect && !detecting && (
+
+                  {/* Summary */}
+                  {autoDetect && !detecting && Object.keys(detectResults).length > 0 && (
                     <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-                      className={`mt-4 flex items-center gap-3 rounded-xl border px-4 py-3 ${
+                      className={`mt-3 flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium ${
                         autoDetect.has_braces || autoDetect.has_implants
-                          ? "bg-amber-50 border-amber-200"
-                          : "bg-green-50 border-green-200"
+                          ? "bg-amber-50 border border-amber-200 text-amber-700"
+                          : "bg-green-50 border border-green-200 text-green-700"
                       }`}>
-                      <span className="text-lg">🤖</span>
-                      <div>
-                        <p className={`text-sm font-medium ${autoDetect.has_braces || autoDetect.has_implants ? "text-amber-700" : "text-green-700"}`}>
-                          {autoDetect.has_braces && "☑ Обнаружены брекеты "}
-                          {autoDetect.has_implants && "☑ Обнаружены импланты "}
-                          {!autoDetect.has_braces && !autoDetect.has_implants && "Брекеты и импланты не обнаружены"}
-                        </p>
-                        <p className="text-xs text-gray-400">Уверенность: {Math.round(autoDetect.confidence * 100)}%</p>
-                      </div>
+                      <span className="text-base">{autoDetect.has_braces ? "🦷" : "✅"}</span>
+                      {autoDetect.has_braces ? "Брекеты обнаружены — учтены в анализе" : "Ортопедические конструкции не обнаружены"}
                     </motion.div>
                   )}
                 </motion.section>
