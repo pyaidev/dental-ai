@@ -229,42 +229,32 @@
     </div>
 
     <!-- QR + Bot links -->
-    <div style="margin-top: 15px; display: flex; gap: 12px; align-items: flex-start; border-top: 1px solid #eee; padding-top: 10px;">
-        {% if qr_b64 %}
-        <img src="{{ qr_b64 }}" style="width: 65px; height: 65px;" alt="QR">
-        {% endif %}
-        <div style="flex: 1;">
-            <div style="font-size: 9px; font-weight: bold; color: #333; margin-bottom: 6px;">Напоминания о визитах:</div>
-            <table style="font-size: 9px; color: #555; border: none;">
-                <tr>
-                    <td style="padding: 4px 10px 4px 0; border: none; vertical-align: middle;">
-                        <span style="display: inline-block; width: 16px; height: 16px; background: #0088cc; color: white; border-radius: 50%; text-align: center; line-height: 16px; font-size: 10px;">T</span>
-                    </td>
-                    <td style="padding: 4px 0; border: none;">Telegram:</td>
-                    <td style="padding: 4px 0 4px 8px; border: none; font-weight: bold;">
-                        <a href="https://t.me/OdontaAI_bot" style="color: #0088cc; text-decoration: none;">@OdontaAI_bot</a>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 4px 10px 4px 0; border: none; vertical-align: middle;">
-                        <span style="display: inline-block; width: 16px; height: 16px; background: #25D366; color: white; border-radius: 50%; text-align: center; line-height: 16px; font-size: 10px;">W</span>
-                    </td>
-                    <td style="padding: 4px 0; border: none;">WhatsApp:</td>
-                    <td style="padding: 4px 0 4px 8px; border: none; font-weight: bold;">
-                        <a href="https://wa.me/OdontaAI" style="color: #25D366; text-decoration: none;">Отправить отчёт</a>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 4px 10px 4px 0; border: none; vertical-align: middle;">
-                        <span style="display: inline-block; width: 16px; height: 16px; background: #7B68EE; color: white; border-radius: 50%; text-align: center; line-height: 16px; font-size: 10px;">M</span>
-                    </td>
-                    <td style="padding: 4px 0; border: none;">Max:</td>
-                    <td style="padding: 4px 0 4px 8px; border: none; font-weight: bold;">
-                        <a href="https://max.ru/id312334497069_bot" style="color: #7B68EE; text-decoration: none;">max.ru/id312334497069_bot</a>
-                    </td>
-                </tr>
-            </table>
-            <div style="font-size: 7px; color: #aaa; margin-top: 4px;">Отсканируйте QR → онлайн-отчёт · Напишите боту /start → напоминания</div>
+    <div style="margin-top: 15px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
+        <div style="display: flex; gap: 14px; align-items: center;">
+            {% if qr_b64 %}
+            <div style="text-align: center;">
+                <img src="{{ qr_b64 }}" style="width: 80px; height: 80px;" alt="QR">
+                <div style="font-size: 6px; color: #aaa; margin-top: 2px;">Онлайн-отчёт</div>
+            </div>
+            {% endif %}
+            <div style="flex: 1;">
+                <div style="font-size: 8px; font-weight: 600; color: #374151; margin-bottom: 5px; letter-spacing: 0.5px; text-transform: uppercase;">Напоминания о визитах</div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="https://t.me/OdontaAI_bot" style="display: inline-flex; align-items: center; gap: 4px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 4px 8px; text-decoration: none; font-size: 8px; color: #0284c7;">
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #0088cc; color: white; border-radius: 50%; text-align: center; line-height: 12px; font-size: 7px; font-weight: bold;">T</span>
+                        @OdontaAI_bot
+                    </a>
+                    <a href="https://wa.me/OdontaAI" style="display: inline-flex; align-items: center; gap: 4px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 4px 8px; text-decoration: none; font-size: 8px; color: #16a34a;">
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #25D366; color: white; border-radius: 50%; text-align: center; line-height: 12px; font-size: 7px; font-weight: bold;">W</span>
+                        WhatsApp
+                    </a>
+                    <a href="https://max.ru/id312334497069_bot" style="display: inline-flex; align-items: center; gap: 4px; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 6px; padding: 4px 8px; text-decoration: none; font-size: 8px; color: #7c3aed;">
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #7B68EE; color: white; border-radius: 50%; text-align: center; line-height: 12px; font-size: 7px; font-weight: bold;">M</span>
+                        Max
+                    </a>
+                </div>
+                <div style="font-size: 7px; color: #9ca3af; margin-top: 5px;">Отсканируйте QR → онлайн-отчёт · Напишите боту /start → напоминания</div>
+            </div>
         </div>
     </div>
 
