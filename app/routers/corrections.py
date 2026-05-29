@@ -97,3 +97,41 @@ def correct_analysis(
         "pdf_url": f"/api/report/{analysis.id}/pdf",
         "message": "Результаты обновлены, PDF пересоздан",
     }
+
+
+@router.post("/analyses/regenerate-all-pdfs")
+def regenerate_all_pdfs(
+    user: AdminUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Regenerate all PDF reports with current template. Admin only."""
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    analyses = db.query(Analysis).all()
+    count = 0
+    errors = []
+
+    for analysis in analyses:
+        try:
+            patient = db.query(Patient).filter(Patient.id == analysis.patient_id).first()
+            if not patient:
+                continue
+            doctor = db.query(Doctor).filter(Doctor.id == analysis.doctor_id).first() if analysis.doctor_id else None
+            clinic = db.query(Clinic).filter(Clinic.id == analysis.clinic_id).first() if analysis.clinic_id else None
+
+            indices = calculate_indices(
+                analysis.plaque_pct_front,
+                analysis.plaque_pct_right,
+                analysis.plaque_pct_left,
+            )
+
+            pdf_path = analysis.pdf_path or f"results/{analysis.id}_report.pdf"
+            generate_pdf(analysis, patient, doctor, clinic, indices, pdf_path)
+            analysis.pdf_path = pdf_path
+            count += 1
+        except Exception as e:
+            errors.append(f"Analysis {analysis.id}: {str(e)}")
+
+    db.commit()
+    return {"regenerated": count, "errors": errors}
