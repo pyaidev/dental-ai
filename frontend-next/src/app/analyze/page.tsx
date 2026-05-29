@@ -857,7 +857,7 @@ function AnalyzeContent() {
                   />
                 ) : (
                   <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80 font-sans">
-                    {result.recommendations}
+                    {result.recommendations.replace(/\*\*/g, "")}
                   </pre>
                 )}
               </motion.div>

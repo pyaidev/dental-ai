@@ -188,7 +188,7 @@ export default function PublicReportPage() {
         >
           <h2 className="font-semibold mb-3">Рекомендации</h2>
           <pre className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 font-sans">
-            {data.recommendations}
+            {data.recommendations.replace(/\*\*/g, "")}
           </pre>
         </motion.div>
 

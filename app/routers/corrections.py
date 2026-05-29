@@ -136,8 +136,15 @@ def regenerate_all_pdfs(
                 analysis.plaque_pct_left,
             )
 
+            ic = db.query(InterdentalChart).filter(InterdentalChart.patient_id == patient.id).order_by(InterdentalChart.created_at.desc()).first()
+            pc = db.query(PeriodontalChart).filter(PeriodontalChart.patient_id == patient.id).order_by(PeriodontalChart.created_at.desc()).first()
+
             pdf_path = analysis.pdf_path or f"results/{analysis.id}_report.pdf"
-            generate_pdf(analysis, patient, doctor, clinic, indices, pdf_path)
+            generate_pdf(analysis, patient, doctor, clinic, indices, pdf_path,
+                interdental_data=_json.loads(ic.data) if ic else None,
+                interdental_brand=ic.brand if ic else None,
+                periodontal_data=_json.loads(pc.data) if pc else None,
+            )
             analysis.pdf_path = pdf_path
             count += 1
         except Exception as e:
