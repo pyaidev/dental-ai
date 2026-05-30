@@ -141,3 +141,108 @@ def admin_system(user: AdminUser = Depends(require_admin)):
         health["database"] = "unknown"
 
     return health
+
+
+# ── User Management ──
+
+@router.post("/admin/users/{user_id}/block")
+def block_user(user_id: int, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    target = db.query(AdminUser).filter(AdminUser.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    if target.role == "admin":
+        raise HTTPException(status_code=400, detail="Cannot block admin")
+    target.role = "blocked"
+    db.commit()
+    return {"ok": True, "message": f"User {target.username} blocked"}
+
+
+@router.post("/admin/users/{user_id}/unblock")
+def unblock_user(user_id: int, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    target = db.query(AdminUser).filter(AdminUser.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    target.role = "doctor"
+    db.commit()
+    return {"ok": True, "message": f"User {target.username} unblocked"}
+
+
+class AssignPlanRequest(BaseModel):
+    plan: str
+    reports: int = 100
+
+from pydantic import BaseModel
+
+@router.post("/admin/users/{user_id}/assign-plan")
+def assign_plan(user_id: int, body: AssignPlanRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    target = db.query(AdminUser).filter(AdminUser.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    # Expire old active subs
+    old_subs = db.query(Subscription).filter(Subscription.user_id == user_id, Subscription.status == "active").all()
+    for s in old_subs:
+        s.status = "expired"
+    # Create new
+    import uuid
+    sub = Subscription(
+        user_id=user_id,
+        plan=body.plan,
+        reports_total=body.reports,
+        reports_used=0,
+        price_per_report=0,
+        payment_id=f"admin_{uuid.uuid4().hex[:8]}",
+        status="active",
+    )
+    db.add(sub)
+    db.commit()
+    return {"ok": True, "message": f"Plan {body.plan} assigned to {target.username} with {body.reports} reports"}
+
+
+# ── Reviews CRUD ──
+
+@router.get("/admin/reviews")
+def get_reviews(user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Review
+    reviews = db.query(Review).order_by(Review.id.desc()).all()
+    return [{"id": r.id, "name": r.name, "role": r.role, "quote": r.quote, "stars": r.stars} for r in reviews]
+
+
+class ReviewRequest(BaseModel):
+    name: str
+    role: str
+    quote: str
+    stars: int = 5
+
+@router.post("/admin/reviews")
+def create_review(body: ReviewRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Review
+    review = Review(name=body.name, role=body.role, quote=body.quote, stars=body.stars)
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+    return {"id": review.id, "name": review.name, "role": review.role, "quote": review.quote, "stars": review.stars}
+
+
+@router.put("/admin/reviews/{review_id}")
+def update_review(review_id: int, body: ReviewRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Review
+    review = db.query(Review).filter(Review.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    review.name = body.name
+    review.role = body.role
+    review.quote = body.quote
+    review.stars = body.stars
+    db.commit()
+    return {"id": review.id, "name": review.name, "role": review.role, "quote": review.quote, "stars": review.stars}
+
+
+@router.delete("/admin/reviews/{review_id}")
+def delete_review(review_id: int, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Review
+    review = db.query(Review).filter(Review.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    db.delete(review)
+    db.commit()
+    return {"ok": True}

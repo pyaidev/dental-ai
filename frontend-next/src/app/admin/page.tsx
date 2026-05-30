@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
   Shield, Users, FileText, CreditCard, Server, Database,
   TrendingUp, DollarSign, Activity, AlertTriangle, CheckCircle,
-  LogOut, LayoutDashboard, ScanLine, BarChart3, Settings, ExternalLink
+  LogOut, LayoutDashboard, ScanLine, BarChart3, Settings, ExternalLink,
+  Star, Trash2, Edit3, Plus, X, ChevronDown, Lock, Unlock,
+  Calendar, Clock, RefreshCw, Eye, MessageSquare, Filter,
+  UserCheck, UserX, Search, Save, Package
 } from "lucide-react";
 import { API_BASE } from "@/lib/utils";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface Overview {
   users: { total: number; doctors: number; admins: number };
@@ -20,232 +25,965 @@ interface Overview {
 }
 
 interface UserItem {
-  id: number; username: string; fio: string; role: string;
-  last_login: string | null; created_at: string | null;
-  subscription: { plan: string; reports_remaining: number; reports_total: number } | null;
+  id: number;
+  username: string;
+  fio: string;
+  role: string;
+  is_active?: boolean;
+  last_login: string | null;
+  created_at: string | null;
+  subscription: {
+    plan: string;
+    status: string;
+    reports_remaining: number;
+    reports_total: number;
+    created_at?: string;
+  } | null;
 }
 
 interface SystemHealth {
-  server: string; python: string; os: string;
+  server: string;
+  python: string;
+  os: string;
   disk?: { total_gb: number; used_gb: number; free_gb: number; percent: number };
-  redis: string; database: string;
+  redis: string;
+  database: string;
 }
 
-export default function AdminPage() {
-  const router = useRouter();
-  const [overview, setOverview] = useState<Overview | null>(null);
-  const [users, setUsers] = useState<UserItem[]>([]);
-  const [system, setSystem] = useState<SystemHealth | null>(null);
-  const [tab, setTab] = useState<"overview" | "users" | "system">("overview");
+interface Review {
+  id?: number;
+  name: string;
+  role: string;
+  quote: string;
+  stars: number;
+}
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("dental_token") : null;
+type TabKey = "overview" | "users" | "transactions" | "reviews";
 
-  useEffect(() => {
-    if (!token) { router.replace("/login"); return; }
-    const h = { Authorization: `Bearer ${token}` };
-    Promise.all([
-      fetch(`${API_BASE}/api/admin/overview`, { headers: h }).then(r => r.ok ? r.json() : null),
-      fetch(`${API_BASE}/api/admin/users`, { headers: h }).then(r => r.ok ? r.json() : []),
-      fetch(`${API_BASE}/api/admin/system`, { headers: h }).then(r => r.ok ? r.json() : null),
-    ]).then(([o, u, s]) => {
-      setOverview(o);
-      setUsers(Array.isArray(u) ? u : []);
-      setSystem(s);
-    }).catch(() => {});
-  }, [token, router]);
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-  const o = overview;
+const fmt = (d: string | null) =>
+  d ? new Date(d).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
+
+const fmtNum = (n: number) => n?.toLocaleString("ru-RU") ?? "0";
+
+const PLAN_COLORS: Record<string, string> = {
+  free: "bg-slate-100 text-slate-600",
+  basic: "bg-blue-50 text-blue-700",
+  pro: "bg-violet-50 text-violet-700",
+  clinic: "bg-amber-50 text-amber-700",
+  unlimited: "bg-emerald-50 text-emerald-700",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  active: "bg-emerald-50 text-emerald-700",
+  expired: "bg-red-50 text-red-600",
+  cancelled: "bg-slate-100 text-slate-500",
+  pending: "bg-yellow-50 text-yellow-700",
+};
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function StatCard({
+  label, value, sub, icon: Icon, gradient, delay = 0,
+}: {
+  label: string; value: string | number; sub?: string;
+  icon: React.ElementType; gradient: string; delay?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="relative overflow-hidden rounded-2xl p-5 text-white shadow-lg"
+      style={{ background: gradient }}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/70">{label}</p>
+          <p className="mt-1.5 text-3xl font-bold">{value}</p>
+          {sub && <p className="mt-0.5 text-xs text-white/70">{sub}</p>}
+        </div>
+        <Icon className="h-8 w-8 text-white/25" />
+      </div>
+      <div className="pointer-events-none absolute -bottom-4 -right-4 h-20 w-20 rounded-full bg-white/10" />
+    </motion.div>
+  );
+}
+
+function Badge({ text, className }: { text: string; className: string }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${className}`}>
+      {text}
+    </span>
+  );
+}
+
+// ─── Review Modal ─────────────────────────────────────────────────────────────
+
+function ReviewModal({
+  review, onClose, onSave,
+}: {
+  review: Review | null;
+  onClose: () => void;
+  onSave: (r: Review) => void;
+}) {
+  const [form, setForm] = useState<Review>(
+    review ?? { name: "", role: "", quote: "", stars: 5 }
+  );
 
   return (
-    <>
-      {/* Admin Header */}
-      <motion.header
-        initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-50 bg-slate-900 text-white"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
       >
-        <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-5 sm:px-8">
-          <div className="flex items-center gap-3">
-            <Shield className="h-5 w-5 text-cyan-400" />
-            <span className="text-sm font-bold">Admin Panel</span>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-bold">{review?.id ? "Редактировать" : "Добавить"} отзыв</h3>
+          <button onClick={onClose} className="rounded-lg p-1 hover:bg-slate-100 transition-colors">
+            <X className="h-4 w-4 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Имя</label>
+            <input
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              placeholder="Имя Фамилия"
+            />
           </div>
-          <div className="flex items-center gap-3 text-xs">
-            <a href="https://odontaindex.ru/dashboard" target="_blank" className="flex items-center gap-1 text-white/50 hover:text-white transition-colors">
-              <ExternalLink className="h-3 w-3" /> Основной сайт
-            </a>
-            <span className="text-white/20">|</span>
-            {[
-              { href: "https://odontaindex.ru/analyze", label: "Анализ", icon: ScanLine },
-              { href: "https://odontaindex.ru/patients", label: "Пациенты", icon: Users },
-              { href: "https://odontaindex.ru/statistics", label: "Статистика", icon: BarChart3 },
-              { href: "https://odontaindex.ru/settings", label: "Кабинет", icon: Settings },
-            ].map(link => (
-              <a key={link.href} href={link.href} target="_blank"
-                className="flex items-center gap-1 text-white/40 hover:text-white transition-colors">
-                <link.icon className="h-3 w-3" /><span className="hidden sm:inline">{link.label}</span>
-              </a>
-            ))}
-            <span className="text-white/20">|</span>
-            <button onClick={() => { localStorage.removeItem("dental_token"); router.push("/login"); }}
-              className="flex items-center gap-1 text-white/40 hover:text-red-400 transition-colors">
-              <LogOut className="h-3 w-3" /> Выйти
-            </button>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Должность / роль</label>
+            <input
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+              value={form.role}
+              onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+              placeholder="Стоматолог, Клиника X"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Текст отзыва</label>
+            <textarea
+              rows={4}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 resize-none"
+              value={form.quote}
+              onChange={e => setForm(f => ({ ...f, quote: e.target.value }))}
+              placeholder="Напишите текст отзыва..."
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Оценка</label>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map(n => (
+                <button key={n} onClick={() => setForm(f => ({ ...f, stars: n }))}
+                  className="transition-transform hover:scale-110">
+                  <Star className={`h-6 w-6 ${n <= form.stars ? "fill-amber-400 text-amber-400" : "text-slate-200"}`} />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </motion.header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-center gap-3">
-          <Shield className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Панель администратора</h1>
-            <p className="text-sm text-muted">Мониторинг системы Odonta Index AI</p>
-          </div>
-        </motion.div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          {([
-            { key: "overview", label: "Обзор", icon: TrendingUp },
-            { key: "users", label: "Пользователи", icon: Users },
-            { key: "system", label: "Система", icon: Server },
-          ] as const).map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-                tab === t.key ? "bg-primary/10 text-primary" : "text-muted hover:bg-slate-50"
+        <div className="mt-5 flex gap-3">
+          <button onClick={onClose}
+            className="flex-1 rounded-xl border border-slate-200 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+            Отмена
+          </button>
+          <button
+            onClick={() => onSave(form)}
+            disabled={!form.name || !form.quote}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            <Save className="h-4 w-4" /> Сохранить
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Assign Plan Modal ────────────────────────────────────────────────────────
+
+function AssignPlanModal({
+  user, onClose, onSave,
+}: {
+  user: UserItem;
+  onClose: () => void;
+  onSave: (userId: number, plan: string, reportsTotal: number) => void;
+}) {
+  const [plan, setPlan] = useState(user.subscription?.plan ?? "basic");
+  const [reports, setReports] = useState(user.subscription?.reports_total ?? 10);
+
+  const PLANS = [
+    { key: "basic", label: "Basic", reports: 10 },
+    { key: "pro", label: "Pro", reports: 30 },
+    { key: "clinic", label: "Clinic", reports: 100 },
+    { key: "unlimited", label: "Unlimited", reports: 9999 },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-bold">Назначить план</h3>
+          <button onClick={onClose} className="rounded-lg p-1 hover:bg-slate-100 transition-colors">
+            <X className="h-4 w-4 text-slate-500" />
+          </button>
+        </div>
+
+        <p className="mb-4 text-sm text-slate-500">Пользователь: <span className="font-semibold text-slate-800">{user.fio || user.username}</span></p>
+
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          {PLANS.map(p => (
+            <button key={p.key}
+              onClick={() => { setPlan(p.key); setReports(p.reports); }}
+              className={`rounded-xl border-2 p-3 text-left transition-all ${
+                plan === p.key ? "border-cyan-500 bg-cyan-50" : "border-slate-200 hover:border-slate-300"
               }`}
             >
-              <t.icon className="h-4 w-4" />{t.label}
+              <p className="text-sm font-bold">{p.label}</p>
+              <p className="text-xs text-slate-500">{p.reports === 9999 ? "∞" : p.reports} отчётов</p>
             </button>
           ))}
         </div>
 
-        {/* Overview */}
-        {tab === "overview" && o && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              {[
-                { label: "Пользователи", value: o.users.total, sub: `${o.users.doctors} врачей`, icon: Users, color: "#0891b2" },
-                { label: "Анализов/мес", value: o.analyses.this_month, sub: `Всего: ${o.analyses.total}`, icon: FileText, color: "#8b5cf6" },
-                { label: "Выручка", value: `${o.subscriptions.total_revenue.toLocaleString()} ₽`, sub: `${o.subscriptions.active} подписок`, icon: DollarSign, color: "#10b981" },
-                { label: "Прибыль", value: `${o.profit.toLocaleString()} ₽`, sub: `Расходы: ${o.costs.total_monthly_cost} ₽`, icon: TrendingUp, color: o.profit > 0 ? "#10b981" : "#ef4444" },
-              ].map((card, i) => (
-                <motion.div key={card.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  className="rounded-2xl bg-white p-5" style={{ boxShadow: "var(--card-shadow)" }}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted/60">{card.label}</p>
-                      <p className="mt-1 text-2xl font-bold" style={{ color: card.color }}>{card.value}</p>
-                      <p className="mt-0.5 text-[11px] text-muted">{card.sub}</p>
+        <div className="mb-4">
+          <label className="mb-1 block text-xs font-medium text-slate-600">Кол-во отчётов</label>
+          <input type="number" min={1} max={9999}
+            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+            value={reports}
+            onChange={e => setReports(Number(e.target.value))}
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <button onClick={onClose}
+            className="flex-1 rounded-xl border border-slate-200 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+            Отмена
+          </button>
+          <button onClick={() => onSave(user.id, plan, reports)}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+            <Package className="h-4 w-4" /> Назначить
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function AdminPage() {
+  const router = useRouter();
+
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [system, setSystem] = useState<SystemHealth | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [tab, setTab] = useState<TabKey>("overview");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Users tab
+  const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState<"all" | "doctor" | "admin">("all");
+  const [assignUser, setAssignUser] = useState<UserItem | null>(null);
+
+  // Transactions tab
+  const [txStatusFilter, setTxStatusFilter] = useState<"all" | "active" | "expired" | "cancelled">("all");
+
+  // Reviews tab
+  const [editReview, setEditReview] = useState<Review | null | "new">(null);
+  const [reviewSaving, setReviewSaving] = useState(false);
+
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("dental_token") : null;
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const fetchData = useCallback(
+    async (silent = false) => {
+      if (!token) { router.replace("/login"); return; }
+      if (!silent) setLoading(true);
+      else setRefreshing(true);
+
+      try {
+        const [o, u, s, r] = await Promise.all([
+          fetch(`${API_BASE}/api/admin/overview`, { headers }).then(res => res.ok ? res.json() : null),
+          fetch(`${API_BASE}/api/admin/users`, { headers }).then(res => res.ok ? res.json() : []),
+          fetch(`${API_BASE}/api/admin/system`, { headers }).then(res => res.ok ? res.json() : null),
+          fetch(`${API_BASE}/api/admin/reviews`, { headers }).then(res => res.ok ? res.json() : []),
+        ]);
+
+        setOverview(o);
+        setUsers(Array.isArray(u) ? u : []);
+        setSystem(s);
+        setReviews(Array.isArray(r) ? r : []);
+      } catch {
+        /* silently fail */
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [token]
+  );
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Block / unblock user
+  const toggleBlock = async (u: UserItem) => {
+    const action = u.is_active !== false ? "block" : "unblock";
+    await fetch(`${API_BASE}/api/admin/users/${u.id}/${action}`, {
+      method: "POST", headers,
+    });
+    setUsers(prev =>
+      prev.map(x => x.id === u.id ? { ...x, is_active: action === "unblock" } : x)
+    );
+  };
+
+  // Assign plan
+  const handleAssignPlan = async (userId: number, plan: string, reportsTotal: number) => {
+    await fetch(`${API_BASE}/api/admin/users/${userId}/assign-plan`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ plan, reports_total: reportsTotal }),
+    });
+    setAssignUser(null);
+    fetchData(true);
+  };
+
+  // Save review
+  const handleSaveReview = async (r: Review) => {
+    setReviewSaving(true);
+    try {
+      if (r.id) {
+        await fetch(`${API_BASE}/api/admin/reviews/${r.id}`, {
+          method: "PUT",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify(r),
+        });
+        setReviews(prev => prev.map(x => (x.id === r.id ? r : x)));
+      } else {
+        const res = await fetch(`${API_BASE}/api/admin/reviews`, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify(r),
+        });
+        if (res.ok) {
+          const created = await res.json();
+          setReviews(prev => [...prev, created]);
+        }
+      }
+    } finally {
+      setReviewSaving(false);
+      setEditReview(null);
+    }
+  };
+
+  // Delete review
+  const handleDeleteReview = async (id: number) => {
+    if (!confirm("Удалить отзыв?")) return;
+    await fetch(`${API_BASE}/api/admin/reviews/${id}`, { method: "DELETE", headers });
+    setReviews(prev => prev.filter(x => x.id !== id));
+  };
+
+  // ─── Derived data ───────────────────────────────────────────────────────────
+
+  const filteredUsers = users.filter(u => {
+    const matchSearch =
+      !userSearch ||
+      u.username.toLowerCase().includes(userSearch.toLowerCase()) ||
+      (u.fio || "").toLowerCase().includes(userSearch.toLowerCase());
+    const matchRole = userRoleFilter === "all" || u.role === userRoleFilter;
+    return matchSearch && matchRole;
+  });
+
+  const allSubscriptions = users
+    .filter(u => u.subscription)
+    .map(u => ({ ...u.subscription!, userId: u.id, username: u.username, fio: u.fio }));
+
+  const filteredTx =
+    txStatusFilter === "all"
+      ? allSubscriptions
+      : allSubscriptions.filter(s => s.status === txStatusFilter);
+
+  const o = overview;
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
+
+  const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
+    { key: "overview", label: "Обзор", icon: LayoutDashboard },
+    { key: "users", label: "Пользователи", icon: Users },
+    { key: "transactions", label: "Транзакции", icon: CreditCard },
+    { key: "reviews", label: "Отзывы", icon: MessageSquare },
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* ── Sidebar ── */}
+      <aside className="hidden md:flex flex-col w-56 shrink-0 bg-slate-900 min-h-screen">
+        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
+          <Shield className="h-5 w-5 text-cyan-400 shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-white">Admin Panel</p>
+            <p className="text-[10px] text-white/40">Odonta Index AI</p>
+          </div>
+        </div>
+
+        <nav className="flex flex-col gap-1 p-3 flex-1">
+          {TABS.map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all text-left ${
+                tab === t.key
+                  ? "bg-cyan-500/20 text-cyan-400"
+                  : "text-white/50 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              <t.icon className="h-4 w-4 shrink-0" />
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-3 border-t border-white/10 space-y-1">
+          <a href="/dashboard" target="_blank"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs text-white/40 hover:text-white hover:bg-white/5 transition-all">
+            <ExternalLink className="h-3.5 w-3.5" /> Основной сайт
+          </a>
+          <button
+            onClick={() => { localStorage.removeItem("dental_token"); router.push("/login"); }}
+            className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs text-white/40 hover:text-red-400 hover:bg-red-400/5 transition-all">
+            <LogOut className="h-3.5 w-3.5" /> Выйти
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main ── */}
+      <div className="flex-1 min-w-0">
+        {/* Mobile header */}
+        <header className="md:hidden sticky top-0 z-40 bg-slate-900 text-white">
+          <div className="flex h-12 items-center justify-between px-4">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-cyan-400" />
+              <span className="text-sm font-bold">Admin Panel</span>
+            </div>
+            <button onClick={() => { localStorage.removeItem("dental_token"); router.push("/login"); }}
+              className="text-white/50 hover:text-red-400 transition-colors">
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+          {/* Mobile tabs */}
+          <div className="flex border-t border-white/10 overflow-x-auto scrollbar-hide">
+            {TABS.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium whitespace-nowrap shrink-0 border-b-2 transition-all ${
+                  tab === t.key ? "border-cyan-400 text-cyan-400 bg-white/5" : "border-transparent text-white/40"
+                }`}
+              >
+                <t.icon className="h-3.5 w-3.5" />{t.label}
+              </button>
+            ))}
+          </div>
+        </header>
+
+        {/* Content area */}
+        <div className="p-5 sm:p-7 max-w-[1200px]">
+          {/* Page title + refresh */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-xl font-bold text-slate-800">
+                {TABS.find(t => t.key === tab)?.label}
+              </h1>
+              <p className="text-xs text-slate-400 mt-0.5">Панель управления Odonta Index AI</p>
+            </div>
+            <button onClick={() => fetchData(true)}
+              className={`flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all shadow-sm ${refreshing ? "pointer-events-none" : ""}`}>
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              Обновить
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-24">
+              <div className="h-8 w-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              {/* ─────────────── OVERVIEW ─────────────── */}
+              {tab === "overview" && (
+                <motion.div key="overview"
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="space-y-6"
+                >
+                  {/* KPI cards */}
+                  <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <StatCard
+                      label="Всего пользователей"
+                      value={fmtNum(o?.users.total ?? 0)}
+                      sub={`${o?.users.doctors ?? 0} врачей · ${o?.users.admins ?? 0} адм.`}
+                      icon={Users}
+                      gradient="linear-gradient(135deg, #0891b2 0%, #0e7490 100%)"
+                      delay={0}
+                    />
+                    <StatCard
+                      label="Анализов всего"
+                      value={fmtNum(o?.analyses.total ?? 0)}
+                      sub={`${o?.analyses.this_month ?? 0} за месяц · ${o?.analyses.this_week ?? 0} за неделю`}
+                      icon={FileText}
+                      gradient="linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)"
+                      delay={0.06}
+                    />
+                    <StatCard
+                      label="Выручка"
+                      value={`${fmtNum(o?.subscriptions.total_revenue ?? 0)} ₽`}
+                      sub={`${o?.subscriptions.active ?? 0} активных подписок`}
+                      icon={DollarSign}
+                      gradient="linear-gradient(135deg, #059669 0%, #047857 100%)"
+                      delay={0.12}
+                    />
+                    <StatCard
+                      label="Прибыль"
+                      value={`${fmtNum(o?.profit ?? 0)} ₽`}
+                      sub={`Расходы: ${fmtNum(o?.costs.total_monthly_cost ?? 0)} ₽/мес`}
+                      icon={TrendingUp}
+                      gradient={
+                        (o?.profit ?? 0) >= 0
+                          ? "linear-gradient(135deg, #16a34a 0%, #15803d 100%)"
+                          : "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)"
+                      }
+                      delay={0.18}
+                    />
+                  </div>
+
+                  {/* Secondary cards row */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">YandexGPT</p>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500">Запросы</span>
+                          <span className="font-bold text-slate-800">{fmtNum(o?.costs.ai_requests ?? 0)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500">Стоимость</span>
+                          <span className="font-bold text-violet-600">{fmtNum(o?.costs.ai_cost_rub ?? 0)} ₽</span>
+                        </div>
+                      </div>
                     </div>
-                    <card.icon className="h-5 w-5" style={{ color: card.color, opacity: 0.4 }} />
+                    <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Сервер</p>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500">Стоимость/мес</span>
+                          <span className="font-bold text-slate-800">{fmtNum(o?.costs.server_cost_rub ?? 0)} ₽</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500">Итого расходы</span>
+                          <span className="font-bold text-red-600">{fmtNum(o?.costs.total_monthly_cost ?? 0)} ₽</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Подписки</p>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500">Активных</span>
+                          <span className="font-bold text-emerald-600">{o?.subscriptions.active ?? 0}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500">Отчётов использовано</span>
+                          <span className="font-bold text-slate-800">{fmtNum(o?.subscriptions.total_reports_used ?? 0)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recent registrations */}
+                  <div className="rounded-2xl bg-white shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                      <h3 className="text-sm font-bold text-slate-700">Последние регистрации</h3>
+                      <span className="text-xs text-slate-400">{users.length} всего</span>
+                    </div>
+                    <div className="divide-y divide-slate-50">
+                      {[...users]
+                        .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
+                        .slice(0, 8)
+                        .map(u => (
+                          <div key={u.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold shrink-0 ${
+                                u.role === "admin" ? "bg-red-100 text-red-600" : "bg-cyan-100 text-cyan-700"
+                              }`}>
+                                {(u.fio || u.username).slice(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-slate-800">{u.fio || u.username}</p>
+                                <p className="text-[11px] text-slate-400">@{u.username}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 text-right">
+                              {u.subscription ? (
+                                <Badge
+                                  text={u.subscription.plan}
+                                  className={PLAN_COLORS[u.subscription.plan] ?? "bg-slate-100 text-slate-600"}
+                                />
+                              ) : (
+                                <span className="text-xs text-slate-300">—</span>
+                              )}
+                              <span className="text-[11px] text-slate-400 hidden sm:block">
+                                <Calendar className="h-3 w-3 inline mr-1" />
+                                {fmt(u.created_at)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
                   </div>
                 </motion.div>
-              ))}
-            </div>
+              )}
 
-            {/* AI Costs */}
-            <div className="rounded-2xl bg-white p-5" style={{ boxShadow: "var(--card-shadow)" }}>
-              <h3 className="text-sm font-semibold mb-3">Расходы AI</h3>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-xs text-muted">YandexGPT запросы</p>
-                  <p className="text-lg font-bold text-primary">{o.costs.ai_requests}</p>
-                  <p className="text-xs text-muted">{o.costs.ai_cost_rub} ₽</p>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-xs text-muted">Сервер/мес</p>
-                  <p className="text-lg font-bold">{o.costs.server_cost_rub} ₽</p>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-xs text-muted">Итого/мес</p>
-                  <p className="text-lg font-bold text-danger">{o.costs.total_monthly_cost} ₽</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Users */}
-        {tab === "users" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="rounded-2xl bg-white overflow-hidden" style={{ boxShadow: "var(--card-shadow)" }}>
-            <div className="px-5 py-3 border-b border-gray-100">
-              <p className="text-sm text-muted">{users.length} пользователей</p>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {users.map(u => (
-                <div key={u.id} className="flex items-center justify-between px-5 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                      u.role === "admin" ? "bg-red-50 text-red-500" : "bg-primary/10 text-primary"
-                    }`}>
-                      {(u.fio || u.username).slice(0, 2).toUpperCase()}
+              {/* ─────────────── USERS ─────────────── */}
+              {tab === "users" && (
+                <motion.div key="users"
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="space-y-4"
+                >
+                  {/* Filters */}
+                  <div className="flex flex-wrap gap-3">
+                    <div className="relative flex-1 min-w-48">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                      <input
+                        className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 shadow-sm"
+                        placeholder="Поиск по имени или логину..."
+                        value={userSearch}
+                        onChange={e => setUserSearch(e.target.value)}
+                      />
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{u.fio || u.username}</p>
-                      <p className="text-[11px] text-muted">@{u.username} · {u.role}</p>
+                    <div className="flex rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                      {(["all", "doctor", "admin"] as const).map(r => (
+                        <button key={r}
+                          onClick={() => setUserRoleFilter(r)}
+                          className={`px-4 py-2 text-xs font-medium transition-all ${
+                            userRoleFilter === r
+                              ? "bg-cyan-500 text-white"
+                              : "text-slate-500 hover:bg-slate-50"
+                          }`}
+                        >
+                          {r === "all" ? "Все" : r === "doctor" ? "Врачи" : "Админы"}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="text-right text-xs">
-                    {u.subscription ? (
-                      <span className="rounded-md bg-green-50 px-2 py-0.5 text-green-600 font-medium">
-                        {u.subscription.plan} ({u.subscription.reports_remaining}/{u.subscription.reports_total})
+
+                  {/* Table */}
+                  <div className="rounded-2xl bg-white shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-slate-50">
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        {filteredUsers.length} пользователей
                       </span>
-                    ) : (
-                      <span className="text-muted">Нет подписки</span>
-                    )}
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-100 bg-slate-50/50">
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Пользователь</th>
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Роль</th>
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Подписка</th>
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Отчёты</th>
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Посл. вход</th>
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Рег-ция</th>
+                            <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-400">Действия</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {filteredUsers.map(u => (
+                            <tr key={u.id} className={`group hover:bg-slate-50 transition-colors ${u.is_active === false ? "opacity-50" : ""}`}>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${
+                                    u.role === "admin" ? "bg-red-100 text-red-600" : "bg-cyan-100 text-cyan-700"
+                                  }`}>
+                                    {(u.fio || u.username).slice(0, 2).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-slate-800 leading-tight">{u.fio || "—"}</p>
+                                    <p className="text-[11px] text-slate-400">@{u.username}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge
+                                  text={u.role}
+                                  className={u.role === "admin" ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-600"}
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                {u.subscription ? (
+                                  <Badge
+                                    text={u.subscription.plan}
+                                    className={PLAN_COLORS[u.subscription.plan] ?? "bg-slate-100 text-slate-600"}
+                                  />
+                                ) : (
+                                  <span className="text-xs text-slate-300">—</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-xs text-slate-600">
+                                {u.subscription
+                                  ? `${u.subscription.reports_remaining ?? "?"} / ${u.subscription.reports_total}`
+                                  : <span className="text-slate-300">—</span>}
+                              </td>
+                              <td className="px-4 py-3 text-[11px] text-slate-400">{fmt(u.last_login)}</td>
+                              <td className="px-4 py-3 text-[11px] text-slate-400">{fmt(u.created_at)}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => setAssignUser(u)}
+                                    title="Назначить план"
+                                    className="rounded-lg p-1.5 text-slate-400 hover:bg-cyan-50 hover:text-cyan-600 transition-all"
+                                  >
+                                    <Package className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => toggleBlock(u)}
+                                    title={u.is_active !== false ? "Заблокировать" : "Разблокировать"}
+                                    className={`rounded-lg p-1.5 transition-all ${
+                                      u.is_active !== false
+                                        ? "text-slate-400 hover:bg-red-50 hover:text-red-500"
+                                        : "text-emerald-500 hover:bg-emerald-50"
+                                    }`}
+                                  >
+                                    {u.is_active !== false ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {filteredUsers.length === 0 && (
+                        <div className="flex flex-col items-center gap-2 py-14 text-slate-400">
+                          <Users className="h-8 w-8 opacity-30" />
+                          <p className="text-sm">Нет пользователей</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+                </motion.div>
+              )}
 
-        {/* System */}
-        {tab === "system" && system && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {[
-                { label: "Сервер", value: system.server, icon: Server, status: "ok" },
-                { label: "Redis", value: system.redis, icon: Database, status: system.redis === "connected" ? "ok" : "error" },
-                { label: "PostgreSQL", value: system.database, icon: Database, status: system.database === "connected" ? "ok" : "error" },
-              ].map(s => (
-                <div key={s.label} className="rounded-2xl bg-white p-5 flex items-center gap-3" style={{ boxShadow: "var(--card-shadow)" }}>
-                  {s.status === "ok"
-                    ? <CheckCircle className="h-5 w-5 text-success" />
-                    : <AlertTriangle className="h-5 w-5 text-danger" />}
-                  <div>
-                    <p className="text-xs text-muted">{s.label}</p>
-                    <p className="text-sm font-semibold">{s.value}</p>
+              {/* ─────────────── TRANSACTIONS ─────────────── */}
+              {tab === "transactions" && (
+                <motion.div key="transactions"
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="space-y-4"
+                >
+                  {/* Status filter */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                      <Filter className="h-3.5 w-3.5 text-slate-400 ml-3" />
+                      {(["all", "active", "expired", "cancelled"] as const).map(s => (
+                        <button key={s}
+                          onClick={() => setTxStatusFilter(s)}
+                          className={`px-4 py-2 text-xs font-medium transition-all ${
+                            txStatusFilter === s ? "bg-cyan-500 text-white" : "text-slate-500 hover:bg-slate-50"
+                          }`}
+                        >
+                          {s === "all" ? "Все" : s === "active" ? "Активные" : s === "expired" ? "Истекшие" : "Отменённые"}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-xs text-slate-400">{filteredTx.length} записей</span>
                   </div>
-                </div>
-              ))}
-            </div>
 
-            {system.disk && (
-              <div className="rounded-2xl bg-white p-5" style={{ boxShadow: "var(--card-shadow)" }}>
-                <h3 className="text-sm font-semibold mb-3">Диск</h3>
-                <div className="h-3 rounded-full bg-gray-100 overflow-hidden mb-2">
-                  <div className={`h-full rounded-full ${system.disk.percent > 80 ? "bg-danger" : "bg-primary"}`}
-                    style={{ width: `${system.disk.percent}%` }} />
-                </div>
-                <p className="text-xs text-muted">
-                  {system.disk.used_gb} ГБ / {system.disk.total_gb} ГБ ({system.disk.percent}%)
-                </p>
-              </div>
-            )}
+                  {/* Summary mini-cards */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: "Активных", count: allSubscriptions.filter(s => s.status === "active").length, color: "text-emerald-600 bg-emerald-50" },
+                      { label: "Истекших", count: allSubscriptions.filter(s => s.status === "expired").length, color: "text-red-600 bg-red-50" },
+                      { label: "Отменённых", count: allSubscriptions.filter(s => s.status === "cancelled").length, color: "text-slate-500 bg-slate-100" },
+                    ].map(c => (
+                      <div key={c.label} className="rounded-xl bg-white border border-slate-100 p-4 shadow-sm text-center">
+                        <p className={`text-2xl font-bold ${c.color.split(" ")[0]}`}>{c.count}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{c.label}</p>
+                      </div>
+                    ))}
+                  </div>
 
-            <div className="rounded-2xl bg-white p-5" style={{ boxShadow: "var(--card-shadow)" }}>
-              <h3 className="text-sm font-semibold mb-2">Инфо</h3>
-              <div className="text-xs text-muted space-y-1">
-                <p>Python: {system.python}</p>
-                <p>OS: {system.os}</p>
-              </div>
-            </div>
-          </motion.div>
+                  {/* Table */}
+                  <div className="rounded-2xl bg-white shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-100 bg-slate-50/50">
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Пользователь</th>
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Тариф</th>
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Статус</th>
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Использовано</th>
+                            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Дата</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {filteredTx.map((s, i) => (
+                            <tr key={i} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-4 py-3">
+                                <p className="font-medium text-slate-800">{s.fio || s.username}</p>
+                                <p className="text-[11px] text-slate-400">@{s.username}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge
+                                  text={s.plan}
+                                  className={PLAN_COLORS[s.plan] ?? "bg-slate-100 text-slate-600"}
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge
+                                  text={s.status}
+                                  className={STATUS_COLORS[s.status] ?? "bg-slate-100 text-slate-500"}
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-20 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                    <div
+                                      className="h-full rounded-full bg-cyan-500"
+                                      style={{
+                                        width: s.reports_total > 0
+                                          ? `${Math.min(100, ((s.reports_total - (s.reports_remaining ?? 0)) / s.reports_total) * 100)}%`
+                                          : "0%"
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-xs text-slate-500">
+                                    {s.reports_total - (s.reports_remaining ?? 0)}/{s.reports_total}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-[11px] text-slate-400">{fmt(s.created_at ?? null)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {filteredTx.length === 0 && (
+                        <div className="flex flex-col items-center gap-2 py-14 text-slate-400">
+                          <CreditCard className="h-8 w-8 opacity-30" />
+                          <p className="text-sm">Нет транзакций</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ─────────────── REVIEWS ─────────────── */}
+              {tab === "reviews" && (
+                <motion.div key="reviews"
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-slate-500">{reviews.length} отзывов на лендинге</p>
+                    <button
+                      onClick={() => setEditReview("new")}
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-sm"
+                    >
+                      <Plus className="h-4 w-4" /> Добавить отзыв
+                    </button>
+                  </div>
+
+                  {reviews.length === 0 ? (
+                    <div className="flex flex-col items-center gap-3 rounded-2xl bg-white border border-slate-100 py-16 text-slate-400 shadow-sm">
+                      <MessageSquare className="h-10 w-10 opacity-25" />
+                      <p className="text-sm">Нет отзывов</p>
+                      <button onClick={() => setEditReview("new")}
+                        className="text-xs text-cyan-600 hover:underline">
+                        Добавить первый отзыв
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {reviews.map((r, i) => (
+                        <motion.div key={r.id ?? i}
+                          initial={{ opacity: 0, scale: 0.97 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="group rounded-2xl bg-white border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map(n => (
+                                <Star key={n} className={`h-3.5 w-3.5 ${
+                                  n <= r.stars ? "fill-amber-400 text-amber-400" : "text-slate-200"
+                                }`} />
+                              ))}
+                            </div>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => setEditReview(r)}
+                                className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => r.id && handleDeleteReview(r.id)}
+                                className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <p className="text-sm text-slate-600 leading-relaxed mb-4 line-clamp-4">"{r.quote}"</p>
+
+                          <div className="flex items-center gap-2.5 pt-3 border-t border-slate-50">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 text-[10px] font-bold text-white shrink-0">
+                              {r.name.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-slate-700 leading-tight">{r.name}</p>
+                              <p className="text-[11px] text-slate-400">{r.role}</p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Modals ─── */}
+      <AnimatePresence>
+        {editReview !== null && (
+          <ReviewModal
+            key="review-modal"
+            review={editReview === "new" ? null : editReview}
+            onClose={() => setEditReview(null)}
+            onSave={handleSaveReview}
+          />
         )}
-      </main>
-    </>
+        {assignUser && (
+          <AssignPlanModal
+            key="assign-modal"
+            user={assignUser}
+            onClose={() => setAssignUser(null)}
+            onSave={handleAssignPlan}
+          />
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

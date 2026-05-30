@@ -153,6 +153,16 @@ class Doctor(Base):
     analyses: Mapped[list["Analysis"]] = relationship(back_populates="doctor")
 
 
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(255))
+    quote: Mapped[str] = mapped_column(Text)
+    stars: Mapped[int] = mapped_column(Integer, default=5)
+
+
 class Patient(Base):
     __tablename__ = "patients"
 
