@@ -458,7 +458,7 @@ function AnalyzeContent() {
                   className="rounded-2xl border border-card-border bg-card p-5"
                 >
                   <h2 className="mb-4 font-semibold text-primary">Фотографии зубов *</h2>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {([
                       { key: "right" as const, label: "Правая сторона" },
                       { key: "front" as const, label: "Фронтальная" },
