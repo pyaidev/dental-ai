@@ -272,8 +272,11 @@ async def get_analysis(analysis_id: int, user: AdminUser = Depends(get_current_u
     analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
-    from app.services.index_calculator import interpret_fedorov, interpret_api, interpret_ohi_s, interpret_silness_loe, interpret_php
+    # Check ownership
     patient = db.query(Patient).filter(Patient.id == analysis.patient_id).first()
+    if user.role != "admin" and patient and patient.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Доступ запрещён")
+    from app.services.index_calculator import interpret_fedorov, interpret_api, interpret_ohi_s, interpret_silness_loe, interpret_php
     return {
         "id": analysis.id,
         "patient_id": analysis.patient_id,

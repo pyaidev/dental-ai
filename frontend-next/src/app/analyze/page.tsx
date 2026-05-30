@@ -12,7 +12,7 @@ import Footer from "@/components/Footer";
 import PhotoUpload from "@/components/PhotoUpload";
 import PhoneInput from "@/components/PhoneInput";
 import IndexGauge from "@/components/IndexGauge";
-import { ReportsLimitModal } from "@/components/SubscriptionGate";
+import { ReportsLimitModal, PaywallModal } from "@/components/SubscriptionGate";
 import InterdentalChart from "@/components/InterdentalChart";
 import PeriodontalChart from "@/components/PeriodontalChart";
 import { API_BASE } from "@/lib/utils";
@@ -54,6 +54,12 @@ function AnalyzeContent() {
     const token = localStorage.getItem("dental_token");
     if (!token) { router.replace("/login"); return; }
 
+    // Load user permissions
+    fetch(`${API_BASE}/api/subscription`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => setUserPermissions(d.permissions || []))
+      .catch(() => {});
+
     // Load existing analysis if ?view=ID
     const viewId = searchParams.get("view");
     if (viewId) {
@@ -70,6 +76,8 @@ function AnalyzeContent() {
   const [editingRecs, setEditingRecs] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [chartTab, setChartTab] = useState<string | null>(null);
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
+  const [paywallFeature, setPaywallFeature] = useState("");
   const [editPctFront, setEditPctFront] = useState(0);
   const [editPctRight, setEditPctRight] = useState(0);
   const [editPctLeft, setEditPctLeft] = useState(0);
@@ -925,18 +933,23 @@ function AnalyzeContent() {
                 >
                   <div className="flex gap-2 border-b border-card-border pb-2">
                     {[
-                      { key: "interdental", label: "Ёршикограмма", icon: "🪥" },
-                      { key: "periodontal", label: "Пародонтограмма", icon: "📊" },
-                    ].map(tab => (
-                      <button key={tab.key}
-                        onClick={() => setChartTab(chartTab === tab.key ? null : tab.key)}
-                        className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
-                          chartTab === tab.key ? "bg-primary/10 text-primary" : "text-muted hover:text-foreground hover:bg-slate-50"
-                        }`}
-                      >
-                        <span>{tab.icon}</span> {tab.label}
-                      </button>
-                    ))}
+                      { key: "interdental", label: "Ёршикограмма", icon: "🪥", perm: "interdental" },
+                      { key: "periodontal", label: "Пародонтограмма", icon: "📊", perm: "periodontal" },
+                    ].map(tab => {
+                      const locked = tab.perm && !userPermissions.includes(tab.perm);
+                      return (
+                        <button key={tab.key}
+                          onClick={() => locked ? setPaywallFeature(tab.perm) : setChartTab(chartTab === tab.key ? null : tab.key)}
+                          className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                            locked ? "text-gray-300 cursor-not-allowed" :
+                            chartTab === tab.key ? "bg-primary/10 text-primary" : "text-muted hover:text-foreground hover:bg-slate-50"
+                          }`}
+                        >
+                          <span>{tab.icon}</span> {tab.label}
+                          {locked && <span className="text-[9px]">🔒</span>}
+                        </button>
+                      );
+                    })}
                   </div>
                   {chartTab === "interdental" && (
                     <InterdentalChart patientId={result.patient_id} />
@@ -950,6 +963,7 @@ function AnalyzeContent() {
           )}
         </AnimatePresence>
         <ReportsLimitModal show={showLimitModal} onClose={() => setShowLimitModal(false)} />
+        <PaywallModal show={!!paywallFeature} onClose={() => setPaywallFeature("")} feature={paywallFeature} />
       </main>
     </>
   );
