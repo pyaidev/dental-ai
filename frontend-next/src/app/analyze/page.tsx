@@ -13,6 +13,8 @@ import PhotoUpload from "@/components/PhotoUpload";
 import PhoneInput from "@/components/PhoneInput";
 import IndexGauge from "@/components/IndexGauge";
 import { ReportsLimitModal } from "@/components/SubscriptionGate";
+import InterdentalChart from "@/components/InterdentalChart";
+import PeriodontalChart from "@/components/PeriodontalChart";
 import { API_BASE } from "@/lib/utils";
 
 interface AnalysisResult {
@@ -38,6 +40,7 @@ interface AnalysisResult {
   pdf_url: string;
   access_token: string;
   public_url: string;
+  patient_id: number;
 }
 
 function AnalyzeContent() {
@@ -66,6 +69,7 @@ function AnalyzeContent() {
   const [editing, setEditing] = useState(false);
   const [editingRecs, setEditingRecs] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [chartTab, setChartTab] = useState<string | null>(null);
   const [editPctFront, setEditPctFront] = useState(0);
   const [editPctRight, setEditPctRight] = useState(0);
   const [editPctLeft, setEditPctLeft] = useState(0);
@@ -910,6 +914,38 @@ function AnalyzeContent() {
                   </pre>
                 )}
               </motion.div>
+
+              {/* Interdental + Periodontal charts in results */}
+              {result.patient_id && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="mt-6 space-y-4"
+                >
+                  <div className="flex gap-2 border-b border-card-border pb-2">
+                    {[
+                      { key: "interdental", label: "Ёршикограмма", icon: "🪥" },
+                      { key: "periodontal", label: "Пародонтограмма", icon: "📊" },
+                    ].map(tab => (
+                      <button key={tab.key}
+                        onClick={() => setChartTab(chartTab === tab.key ? null : tab.key)}
+                        className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                          chartTab === tab.key ? "bg-primary/10 text-primary" : "text-muted hover:text-foreground hover:bg-slate-50"
+                        }`}
+                      >
+                        <span>{tab.icon}</span> {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  {chartTab === "interdental" && (
+                    <InterdentalChart patientId={result.patient_id} />
+                  )}
+                  {chartTab === "periodontal" && (
+                    <PeriodontalChart patientId={result.patient_id} />
+                  )}
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

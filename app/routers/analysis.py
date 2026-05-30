@@ -241,6 +241,7 @@ async def analyze(
 
     return {
         "id": analysis.id,
+        "patient_id": patient.id,
         "plaque_pct_front": pct_front,
         "plaque_pct_right": pct_right,
         "plaque_pct_left": pct_left,
@@ -275,6 +276,7 @@ async def get_analysis(analysis_id: int, user: AdminUser = Depends(get_current_u
     patient = db.query(Patient).filter(Patient.id == analysis.patient_id).first()
     return {
         "id": analysis.id,
+        "patient_id": analysis.patient_id,
         "patient_fio": patient.fio if patient else "",
         "card_number": patient.card_number if patient else "",
         "plaque_pct_front": analysis.plaque_pct_front,
