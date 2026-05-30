@@ -31,7 +31,7 @@ def _detect_clip(image_path: str) -> dict:
         scores.append(score)
 
     avg_score = sum(scores) / len(scores)
-    has_braces = avg_score > 0.65  # threshold tuned on 30 test images
+    has_braces = avg_score > 0.75  # threshold raised to reduce false positives
     return {"has_braces": has_braces, "has_implants": False, "confidence": round(avg_score, 2)}
 
 
@@ -74,7 +74,7 @@ def detect_braces_implants(image_path: str) -> dict:
     # 1. Try CLIP zero-shot classification (best — works on all photos)
     try:
         clip_result = _detect_clip(image_path)
-        if clip_result["confidence"] > 0.6:
+        if clip_result["confidence"] > 0.7:
             return clip_result
     except Exception:
         pass
