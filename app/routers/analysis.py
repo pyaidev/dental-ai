@@ -63,15 +63,19 @@ async def analyze(
     user: AdminUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Check subscription limit BEFORE processing
+    # Check AND deduct subscription atomically BEFORE processing
     if user.role != "admin":
         from app.models import Subscription
-        active_sub = db.query(Subscription).filter(
-            Subscription.user_id == user.id,
-            Subscription.status == "active",
-        ).order_by(Subscription.created_at.desc()).first()
-        if not active_sub or active_sub.reports_remaining <= 0:
+        from sqlalchemy import update
+        result = db.execute(
+            update(Subscription)
+            .where(Subscription.user_id == user.id, Subscription.status == "active", Subscription.reports_used < Subscription.reports_total)
+            .values(reports_used=Subscription.reports_used + 1)
+            .returning(Subscription.id)
+        )
+        if not result.fetchone():
             raise HTTPException(status_code=402, detail="Лимит отчётов исчерпан. Перейдите на подходящий тариф.")
+        db.commit()
 
     analysis_id = str(uuid.uuid4())[:8]
 
@@ -209,18 +213,7 @@ async def analyze(
     db.commit()
     db.refresh(analysis)
 
-    # Deduct from subscription (skip for admin — unlimited)
-    if user.role != "admin":
-        from app.models import Subscription
-        active_sub = db.query(Subscription).filter(
-            Subscription.user_id == user.id,
-            Subscription.status == "active",
-        ).order_by(Subscription.created_at.desc()).first()
-        if active_sub and active_sub.reports_total > active_sub.reports_used:
-            active_sub.reports_used += 1
-            if active_sub.reports_used >= active_sub.reports_total:
-                active_sub.status = "expired"
-            db.commit()
+    # Subscription already deducted atomically at the top
 
     # Fetch chart data for PDF
     from app.models import InterdentalChart, PeriodontalChart

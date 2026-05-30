@@ -6,16 +6,22 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Analysis, Patient, Doctor, Clinic
+from app.models import Analysis, Patient, Doctor, Clinic, AdminUser
+from app.routers.auth import get_current_user
 
 router = APIRouter()
 
 
 @router.get("/report/{analysis_id}/pdf")
-async def download_pdf(analysis_id: int, db: Session = Depends(get_db)):
+async def download_pdf(analysis_id: int, user: AdminUser = Depends(get_current_user), db: Session = Depends(get_db)):
     analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
     if not analysis or not analysis.pdf_path:
         raise HTTPException(status_code=404, detail="Report not found")
+    # Ownership check
+    if user.role != "admin":
+        patient = db.query(Patient).filter(Patient.id == analysis.patient_id).first()
+        if not patient or patient.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
     safe_path = Path(analysis.pdf_path).resolve()
     from app.config import settings
     safe_dir = Path(settings.results_dir).resolve()

@@ -35,6 +35,8 @@ def save_questionnaire(
     patient = db.query(Patient).filter(Patient.id == body.patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+    if user.role != "admin" and patient.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
 
     existing = db.query(PatientQuestionnaire).filter(
         PatientQuestionnaire.patient_id == body.patient_id

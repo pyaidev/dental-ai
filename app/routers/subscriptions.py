@@ -249,11 +249,18 @@ async def _create_tinkoff_payment(terminal_key: str, order_id: str, amount: int,
 
 @router.post("/subscription/tinkoff-webhook")
 async def tinkoff_webhook(request: Request, db: Session = Depends(get_db)):
-    """Tinkoff payment notification webhook.
-    Called by Tinkoff when payment status changes.
-    """
+    """Tinkoff payment notification webhook with signature verification."""
     import hashlib
     body = await request.json()
+
+    # Verify signature
+    received_token = body.pop("Token", "")
+    password = settings.tinkoff_password if hasattr(settings, "tinkoff_password") else ""
+    check_data = {**body, "Password": password}
+    sorted_values = "".join(str(check_data[k]) for k in sorted(check_data.keys()) if k != "Token")
+    expected_token = hashlib.sha256(sorted_values.encode()).hexdigest()
+    if received_token != expected_token:
+        raise HTTPException(status_code=403, detail="Invalid signature")
 
     order_id = body.get("OrderId", "")
     status = body.get("Status", "")
