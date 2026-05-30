@@ -73,10 +73,6 @@ export default function RegisterPage() {
 
       <div className="flex flex-1 items-center justify-center px-4 py-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <img src="/logo.png" alt="Odonta Index AI" className="mx-auto mb-2 h-16" />
-          <p className="text-sm text-gray-400">Создайте аккаунт стоматологической команды</p>
-        </div>
 
         {verificationSent ? (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}

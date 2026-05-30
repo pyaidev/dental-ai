@@ -90,11 +90,6 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        {/* Logo */}
-        <div className="mb-8 text-center">
-          <img src="/logo.png" alt="Odonta Index AI" className="mx-auto mb-3 h-16" />
-          <p className="text-sm text-gray-400">AI-анализ гигиены полости рта</p>
-        </div>
 
         {/* Card */}
         <div className="rounded-2xl bg-white p-8 shadow-sm border border-gray-100">

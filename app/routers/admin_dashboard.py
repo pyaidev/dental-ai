@@ -166,6 +166,9 @@ def admin_user_detail(user_id: int, user: AdminUser = Depends(require_admin), db
 
     return {
         "id": target.id, "username": target.username, "fio": target.fio, "role": target.role,
+        "phone": getattr(target, "phone", None) or "",
+        "position": getattr(target, "position", None) or "",
+        "clinic_name": getattr(target, "clinic_name", None) or "",
         "is_verified": target.is_verified,
         "created_at": target.created_at.isoformat() if target.created_at else None,
         "last_login": target.last_login.isoformat() if target.last_login else None,

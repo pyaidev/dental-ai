@@ -300,7 +300,7 @@ export default function AdminPage() {
   const [userRoleFilter, setUserRoleFilter] = useState<"all" | "doctor" | "admin">("all");
   const [assignUser, setAssignUser] = useState<UserItem | null>(null);
   const [detailUser, setDetailUser] = useState<UserItem | null>(null);
-  const [detailData, setDetailData] = useState<{patients_count:number;analyses_count:number;subscriptions:{plan:string;status:string;reports_used:number;reports_total:number;created_at:string}[];recent_analyses:{id:number;patient:string;plaque:number;date:string}[]} | null>(null);
+  const [detailData, setDetailData] = useState<{phone?:string;position?:string;clinic_name?:string;is_verified?:boolean;created_at?:string;last_login?:string;patients_count:number;analyses_count:number;subscriptions:{plan:string;status:string;reports_used:number;reports_total:number;created_at:string}[];recent_analyses:{id:number;patient:string;plaque:number;date:string}[]} | null>(null);
 
   // Transactions tab
   const [txStatusFilter, setTxStatusFilter] = useState<"all" | "active" | "expired" | "cancelled">("all");
@@ -1046,6 +1046,17 @@ export default function AdminPage() {
                 <div className="flex justify-center py-8"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
               ) : (
                 <div className="space-y-4">
+                  {/* Profile info */}
+                  <div className="rounded-xl bg-slate-50 p-4 space-y-2 text-sm">
+                    {detailData.phone && <div className="flex justify-between"><span className="text-gray-400">Телефон</span><span className="font-medium">{detailData.phone}</span></div>}
+                    {detailData.position && <div className="flex justify-between"><span className="text-gray-400">Должность</span><span className="font-medium">{detailData.position}</span></div>}
+                    {detailData.clinic_name && <div className="flex justify-between"><span className="text-gray-400">Клиника</span><span className="font-medium">{detailData.clinic_name}</span></div>}
+                    <div className="flex justify-between"><span className="text-gray-400">Email</span><span className="font-medium">{detailUser.username}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-400">Верифицирован</span><span className={`font-medium ${detailData.is_verified ? "text-green-600" : "text-red-500"}`}>{detailData.is_verified ? "Да" : "Нет"}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-400">Регистрация</span><span className="font-medium">{detailData.created_at ? new Date(detailData.created_at).toLocaleDateString("ru") : "—"}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-400">Последний вход</span><span className="font-medium">{detailData.last_login ? new Date(detailData.last_login).toLocaleDateString("ru") : "—"}</span></div>
+                  </div>
+
                   <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-xl bg-cyan-50 p-3 text-center">
                       <p className="text-xl font-bold text-cyan-700">{detailData.patients_count}</p>
