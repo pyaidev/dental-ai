@@ -283,7 +283,7 @@
 
     <h2 style="font-size: 14px; margin-bottom: 5px;">Ёршикограмма — Подбор межзубных ёршиков</h2>
     <p style="font-size: 9px; color: #666; margin-bottom: 10px;">
-        Бренд: <strong>{% if interdental_brand == 'tepe' %}TePe{% elif interdental_brand == 'pesitro' %}Pesitro{% else %}Curaprox{% endif %}</strong>
+        Бренд: <strong>{% if interdental_brand == 'tepe' %}TePe{% elif interdental_brand == 'pesitro' %}Pesitro{% elif interdental_brand == 'curasept' %}Curasept{% else %}Curaprox{% endif %}</strong>
         · Пациент: {{ patient.fio }}
     </p>
 
@@ -305,6 +305,8 @@
                         {% if size == '0.4mm' %}TePe Pink (0.4){% elif size == '0.45mm' %}TePe Orange (0.45){% elif size == '0.5mm' %}TePe Red (0.5){% elif size == '0.6mm' %}TePe Blue (0.6){% elif size == '0.7mm' %}TePe Yellow (0.7){% elif size == '0.8mm' %}TePe Green (0.8){% elif size == '1.1mm' %}TePe Purple (1.1){% elif size == '1.3mm' %}TePe Grey (1.3){% else %}{{ size }}{% endif %}
                     {% elif interdental_brand == 'pesitro' %}
                         {% if size == '0.4mm' %}Pesitro XXS{% elif size == '0.45mm' %}Pesitro XS{% elif size == '0.5mm' %}Pesitro S{% elif size == '0.6mm' %}Pesitro S/M{% elif size == '0.7mm' %}Pesitro M{% elif size == '0.8mm' %}Pesitro M/L{% elif size == '1.1mm' %}Pesitro L{% elif size == '1.3mm' %}Pesitro XL{% else %}{{ size }}{% endif %}
+                    {% elif interdental_brand == 'curasept' %}
+                        {% if size == '0.4mm' %}Curasept P06{% elif size == '0.45mm' %}Curasept P07{% elif size == '0.5mm' %}Curasept P08{% elif size == '0.6mm' %}Curasept P09{% elif size == '0.7mm' %}Curasept P10{% elif size == '0.8mm' %}Curasept P11{% elif size == '1.1mm' %}Curasept P12{% elif size == '1.3mm' %}Curasept P14{% else %}{{ size }}{% endif %}
                     {% else %}
                         {% if size == '0.4mm' %}Curaprox CPS 08{% elif size == '0.45mm' %}Curaprox CPS 09{% elif size == '0.5mm' %}Curaprox CPS 07{% elif size == '0.6mm' %}Curaprox CPS 011{% elif size == '0.7mm' %}Curaprox CPS 09{% elif size == '0.8mm' %}Curaprox CPS 011{% elif size == '1.1mm' %}Curaprox CPS 112{% elif size == '1.3mm' %}Curaprox CPS 114{% else %}{{ size }}{% endif %}
                     {% endif %}
