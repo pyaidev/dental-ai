@@ -458,7 +458,7 @@ export default function AdminPage() {
       {/* ── Sidebar ── */}
       <aside className="hidden md:flex flex-col w-56 shrink-0 bg-slate-900 min-h-screen">
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
-          <Shield className="h-5 w-5 text-cyan-400 shrink-0" />
+          <img src="/logo.png" alt="" className="h-8 brightness-0 invert shrink-0" />
           <div>
             <p className="text-sm font-bold text-white">Admin Panel</p>
             <p className="text-[10px] text-white/40">Odonta Index AI</p>
