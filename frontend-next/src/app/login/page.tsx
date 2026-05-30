@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
@@ -15,6 +15,16 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [needVerification, setNeedVerification] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [verified, setVerified] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get("verified");
+    if (v === "success") setVerified("Email подтверждён! Теперь войдите в систему.");
+    else if (v === "error") setError("Неверная или истёкшая ссылка подтверждения.");
+  }, []);
   const [captcha, setCaptcha] = useState(() => {
     const a = Math.floor(Math.random() * 20) + 1;
     const b = Math.floor(Math.random() * 20) + 1;
@@ -43,6 +53,12 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
+      if (resp.status === 403) {
+        const data = await resp.json();
+        setNeedVerification(true);
+        setError(data.detail || "Email не подтверждён");
+        return;
+      }
       if (!resp.ok) {
         const data = await resp.json();
         throw new Error(data.detail || "Неверный логин или пароль");
@@ -128,9 +144,37 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {verified && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="rounded-xl bg-green-50 p-3 text-sm text-green-600 font-medium">{verified}</motion.div>
+            )}
+
             {error && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="rounded-xl bg-red-50 p-3 text-sm text-red-500">{error}</motion.p>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="rounded-xl bg-red-50 p-3 text-sm text-red-500">
+                <p>{error}</p>
+                {needVerification && (
+                  <button
+                    onClick={async () => {
+                      setResending(true);
+                      try {
+                        await fetch(`${API_BASE}/api/auth/resend-verification`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ username, password }),
+                        });
+                        setError("Письмо отправлено повторно. Проверьте почту.");
+                        setNeedVerification(false);
+                      } catch {}
+                      setResending(false);
+                    }}
+                    disabled={resending}
+                    className="mt-2 text-xs font-medium text-cyan-600 hover:underline"
+                  >
+                    {resending ? "Отправка..." : "Отправить письмо повторно"}
+                  </button>
+                )}
+              </motion.div>
             )}
 
             <motion.button type="submit" disabled={loading}

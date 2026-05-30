@@ -103,6 +103,10 @@ def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
         logger.warning(f"Failed login: user='{body.username}' ip={client_ip}")
         raise HTTPException(status_code=401, detail="Неверный логин или пароль")
 
+    # Check email verification (admin always verified)
+    if user.role != "admin" and not user.is_verified:
+        raise HTTPException(status_code=403, detail="Email не подтверждён. Проверьте почту или нажмите «Отправить повторно».")
+
     token = create_token(user.id)
     user.last_login = datetime.now(UTC)
     db.commit()
@@ -120,21 +124,63 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Этот логин уже занят")
 
+    import secrets
+    verify_token = secrets.token_urlsafe(32)
+
     user = AdminUser(
         username=body.username,
         password_hash=hash_password(body.password),
         fio=body.fio,
         role="doctor",
+        is_verified=False,
+        verification_token=verify_token,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
 
-    token = create_token(user.id)
-    return LoginResponse(
-        token=token,
-        user={"id": user.id, "username": user.username, "fio": user.fio, "role": user.role},
-    )
+    # Send verification email
+    try:
+        from app.services.email_service import send_verification_email
+        send_verification_email(body.username, body.fio, verify_token)
+    except Exception as e:
+        logger.error(f"Verification email failed: {e}")
+
+    return {
+        "message": "Регистрация успешна! Проверьте почту для подтверждения.",
+        "requires_verification": True,
+        "user": {"id": user.id, "username": user.username, "fio": user.fio, "role": user.role},
+    }
+
+
+@router.get("/auth/verify/{token}")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    from fastapi.responses import RedirectResponse
+    user = db.query(AdminUser).filter(AdminUser.verification_token == token).first()
+    if not user:
+        return RedirectResponse(url="/login?verified=error", status_code=302)
+    user.is_verified = True
+    user.verification_token = None
+    db.commit()
+    return RedirectResponse(url="/login?verified=success", status_code=302)
+
+
+@router.post("/auth/resend-verification")
+def resend_verification(body: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(AdminUser).filter(AdminUser.username == body.username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    if user.is_verified:
+        return {"message": "Email уже подтверждён"}
+    import secrets
+    user.verification_token = secrets.token_urlsafe(32)
+    db.commit()
+    try:
+        from app.services.email_service import send_verification_email
+        send_verification_email(user.username, user.fio, user.verification_token)
+    except Exception as e:
+        logger.error(f"Resend verification failed: {e}")
+    return {"message": "Письмо отправлено повторно"}
 
 
 class ChangePasswordRequest(BaseModel):

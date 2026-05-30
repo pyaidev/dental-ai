@@ -19,6 +19,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const positions = [
     "Гигиенист-стоматологический", "Стоматолог-терапевт", "Стоматолог-ортодонт",
@@ -44,6 +45,11 @@ export default function RegisterPage() {
       });
       if (!resp.ok) { const d = await resp.json(); throw new Error(d.detail || "Ошибка"); }
       const data = await resp.json();
+      if (data.requires_verification) {
+        setError("");
+        setVerificationSent(true);
+        return;
+      }
       localStorage.setItem("dental_token", data.token);
       localStorage.setItem("dental_user", JSON.stringify(data.user));
       router.push("/dashboard");
@@ -72,6 +78,26 @@ export default function RegisterPage() {
           <p className="text-sm text-gray-400">Создайте аккаунт стоматологической команды</p>
         </div>
 
+        {verificationSent ? (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="rounded-2xl bg-white p-8 shadow-sm border border-gray-100 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cyan-100">
+              <svg className="h-8 w-8 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Проверьте почту</h2>
+            <p className="text-sm text-gray-500 mb-1">Мы отправили письмо на</p>
+            <p className="text-sm font-semibold text-cyan-600 mb-4">{form.username}</p>
+            <p className="text-xs text-gray-400 mb-6">
+              Нажмите на ссылку в письме, чтобы подтвердить регистрацию.<br/>
+              Если письма нет — проверьте папку «Спам».
+            </p>
+            <Link href="/login" className="inline-block rounded-xl bg-cyan-600 px-6 py-3 text-sm font-semibold text-white hover:bg-cyan-700">
+              Перейти ко входу
+            </Link>
+          </motion.div>
+        ) : (
         <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
           <h2 className="mb-1 text-lg font-semibold text-center">Регистрация</h2>
           <p className="mb-4 text-xs text-gray-400 text-center">Заполните данные для создания аккаунта</p>
@@ -178,6 +204,7 @@ export default function RegisterPage() {
             </motion.button>
           </form>
         </div>
+        )}
 
         <p className="mt-4 text-center text-sm text-gray-400">
           Уже есть аккаунт? <Link href="/login" className="text-cyan-600 hover:underline">Войти</Link>

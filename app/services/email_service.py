@@ -49,6 +49,41 @@ def send_email(to: str, subject: str, html_body: str, attachment_path: str | Non
         return False
 
 
+def send_verification_email(email: str, fio: str, token: str) -> bool:
+    """Send email verification link after registration."""
+    verify_url = f"https://odontaindex.ru/api/auth/verify/{token}"
+    html = f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+        <div style="background: linear-gradient(135deg, #0891b2, #0e7490); color: white; padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 700;">Odonta Index AI</h1>
+            <p style="margin: 8px 0 0; opacity: 0.85; font-size: 14px;">Подтверждение регистрации</p>
+        </div>
+        <div style="padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+            <p style="font-size: 16px; color: #1f2937;">Здравствуйте, {fio}!</p>
+            <p style="font-size: 14px; color: #4b5563; line-height: 1.6;">
+                Спасибо за регистрацию в <strong>Odonta Index AI</strong> — сервисе AI-анализа гигиены полости рта.
+                Для активации аккаунта подтвердите ваш email:
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{verify_url}" style="display: inline-block; background: linear-gradient(135deg, #0891b2, #0e7490); color: white; padding: 14px 40px; border-radius: 10px; text-decoration: none; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(8,145,178,0.3);">
+                    Подтвердить email
+                </a>
+            </div>
+            <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+                Если кнопка не работает, скопируйте ссылку:<br>
+                <a href="{verify_url}" style="color: #0891b2; word-break: break-all;">{verify_url}</a>
+            </p>
+            <hr style="border: none; border-top: 1px solid #f3f4f6; margin: 25px 0;">
+            <p style="font-size: 11px; color: #9ca3af; text-align: center;">
+                Если вы не регистрировались — просто проигнорируйте это письмо.<br>
+                ИП Коростелев А.А. · ИНН: 312334497069 · odontaindex.ru
+            </p>
+        </div>
+    </div>
+    """
+    return send_email(email, "Подтверждение регистрации — Odonta Index AI", html)
+
+
 def send_report_email(to: str, patient_name: str, plaque_pct: float, pdf_path: str) -> bool:
     """Send analysis report to patient via email."""
     html = f"""
