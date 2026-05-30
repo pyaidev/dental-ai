@@ -46,14 +46,25 @@ async def max_get_updates(marker: int = 0) -> dict:
 
 async def max_handle_message(chat_id: str, text: str, user_id: str, db: Session):
     """Handle incoming message from Max bot."""
-    if text == "/start":
+    cmd = text.strip().lower()
+
+    if cmd in ("/start", "start", "старт", "начать"):
         await max_send_message(chat_id,
-            "🦷 Odonta Index AI\n\n"
-            "Для подключения напоминаний отправьте ваш номер телефона "
-            "(в формате +7XXXXXXXXXX)")
+            "🦷 Добро пожаловать в Odonta Index AI!\n\n"
+            "Я — бот для напоминаний о гигиене полости рта.\n\n"
+            "Что я умею:\n"
+            "📊 Отправлять результаты анализов\n"
+            "🔔 Напоминать о плановой гигиене\n"
+            "📋 Показывать историю визитов\n\n"
+            "Команды:\n"
+            "/start — подключить уведомления\n"
+            "/status — последний анализ\n"
+            "/stop — отключить\n\n"
+            "Для подключения отправьте ваш номер телефона (в формате +7XXXXXXXXXX)\n\n"
+            "🌐 odontaindex.ru")
         return
 
-    if text == "/stop":
+    if cmd in ("/stop", "stop", "стоп"):
         patient = db.query(Patient).filter(Patient.max_id == str(chat_id)).first()
         if patient:
             patient.max_id = None
@@ -61,7 +72,7 @@ async def max_handle_message(chat_id: str, text: str, user_id: str, db: Session)
             await max_send_message(chat_id, "🔕 Уведомления отключены.")
         return
 
-    if text == "/status":
+    if cmd in ("/status", "status", "статус"):
         from app.models import Analysis
         patient = db.query(Patient).filter(Patient.max_id == str(chat_id)).first()
         if not patient:
