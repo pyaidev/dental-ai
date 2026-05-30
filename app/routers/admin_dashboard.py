@@ -331,8 +331,8 @@ def update_plan(plan_key: str, body: PlanUpdateRequest, user: AdminUser = Depend
 def get_celery_status(user: AdminUser = Depends(require_admin)):
     result = {"status": "unknown", "workers": [], "scheduled": [], "active": []}
     try:
-        from app.celery_app import celery_app
-        inspect = celery_app.control.inspect(timeout=2)
+        from app.celery_app import celery
+        inspect = celery.control.inspect(timeout=2)
         active = inspect.active() or {}
         scheduled = inspect.scheduled() or {}
         registered = inspect.registered() or {}
