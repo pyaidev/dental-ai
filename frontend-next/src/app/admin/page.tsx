@@ -58,7 +58,7 @@ interface Review {
   stars: number;
 }
 
-type TabKey = "overview" | "users" | "transactions" | "reviews" | "plans" | "celery";
+type TabKey = "overview" | "users" | "transactions" | "reviews" | "ambassadors" | "plans" | "celery";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -429,6 +429,7 @@ export default function AdminPage() {
     { key: "transactions", label: "Транзакции", icon: CreditCard },
     { key: "plans", label: "Тарифы", icon: Package },
     { key: "reviews", label: "Отзывы", icon: MessageSquare },
+    { key: "ambassadors", label: "Амбассадоры", icon: Star },
     { key: "celery", label: "Задачи", icon: Activity },
   ];
 
@@ -964,6 +965,11 @@ export default function AdminPage() {
               )}
             </AnimatePresence>
           )}
+          {/* ─── Ambassadors Tab ─── */}
+          {tab === "ambassadors" && (
+            <AmbassadorsManager token={token} />
+          )}
+
           {/* ─── Plans Tab ─── */}
           {tab === "plans" && (
             <PlansManager token={token} />
@@ -995,6 +1001,91 @@ export default function AdminPage() {
           />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Ambassadors Manager ────────────────────────────────────────────────────
+
+function AmbassadorsManager({ token }: { token: string | null }) {
+  const [items, setItems] = useState<{ id: number; name: string; role: string; quote: string }[]>([]);
+  const [editing, setEditing] = useState<{ id: number; name: string; role: string; quote: string } | "new" | null>(null);
+  const [form, setForm] = useState({ name: "", role: "", quote: "" });
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/admin/ambassadors`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(setItems).catch(() => {});
+  }, [token]);
+
+  const openNew = () => { setForm({ name: "", role: "", quote: "" }); setEditing("new"); };
+  const openEdit = (a: typeof items[0]) => { setForm({ name: a.name, role: a.role, quote: a.quote }); setEditing(a); };
+
+  const handleSave = async () => {
+    const isNew = editing === "new";
+    const url = isNew ? `${API_BASE}/api/admin/ambassadors` : `${API_BASE}/api/admin/ambassadors/${(editing as { id: number }).id}`;
+    const resp = await fetch(url, {
+      method: isNew ? "POST" : "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(form),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (isNew) setItems([data, ...items]);
+      else setItems(items.map(i => i.id === data.id ? data : i));
+      setEditing(null);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    await fetch(`${API_BASE}/api/admin/ambassadors/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    setItems(items.filter(i => i.id !== id));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold">Амбассадоры</h2>
+        <button onClick={openNew} className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">
+          <Plus className="h-4 w-4" /> Добавить
+        </button>
+      </div>
+
+      {editing !== null && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border-2 border-primary/30 bg-primary/5 p-5 space-y-3">
+          <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="ФИО"
+            className="w-full rounded-lg border px-3 py-2 text-sm" />
+          <input value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} placeholder="Должность"
+            className="w-full rounded-lg border px-3 py-2 text-sm" />
+          <textarea value={form.quote} onChange={e => setForm({ ...form, quote: e.target.value })} placeholder="Цитата" rows={3}
+            className="w-full rounded-lg border px-3 py-2 text-sm resize-none" />
+          <div className="flex gap-2">
+            <button onClick={handleSave} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">Сохранить</button>
+            <button onClick={() => setEditing(null)} className="rounded-lg border px-4 py-2 text-sm text-gray-500">Отмена</button>
+          </div>
+        </motion.div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {items.map(a => (
+          <div key={a.id} className="rounded-xl border bg-white p-5 group">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                {a.name.split(" ").map(n => n[0]).join("")}
+              </div>
+              <div>
+                <p className="font-bold text-sm">{a.name}</p>
+                <p className="text-xs text-gray-400">{a.role}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 italic mb-3">&laquo;{a.quote}&raquo;</p>
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => openEdit(a)} className="text-xs text-primary hover:underline">Изменить</button>
+              <button onClick={() => handleDelete(a.id)} className="text-xs text-red-500 hover:underline">Удалить</button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

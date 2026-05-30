@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { API_BASE } from "@/lib/utils";
-import { FadeUp, ScaleIn, PulsingBadge } from "./AnimatedSection";
+import { FadeUp, ScaleIn, PulsingBadge } from "@/components/landing/AnimatedSection";
 
 interface Plan {
   name: string;
@@ -123,6 +123,52 @@ export function DynamicReviews() {
                 <p className="text-xs text-gray-400">{review.role}</p>
               </div>
             </div>
+          </div>
+        </FadeUp>
+      ))}
+    </div>
+  );
+}
+
+// ─── Dynamic Ambassadors ────────────────────────────────────────────────────
+
+interface AmbassadorItem {
+  id: number;
+  name: string;
+  role: string;
+  quote: string;
+}
+
+export function DynamicAmbassadors() {
+  const [ambassadors, setAmbassadors] = useState<AmbassadorItem[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/ambassadors`)
+      .then(r => r.ok ? r.json() : [])
+      .then(setAmbassadors)
+      .catch(() => {});
+  }, []);
+
+  const display = ambassadors.length > 0 ? ambassadors : [
+    { id: 1, name: "Коростелев А.А.", role: "Основатель, стоматолог-гигиенист", quote: "AI помогает стандартизировать оценку гигиены и давать пациентам понятные рекомендации" },
+    { id: 2, name: "Чапурова Г.Ш.", role: "Гигиенист-стоматологический", quote: "Автоматические напоминания значительно повышают комплаенс пациентов" },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      {display.map((expert, i) => (
+        <FadeUp key={expert.id} delay={i * 0.15}>
+          <div className="rounded-2xl bg-white p-8 border border-gray-100 shadow-sm">
+            <div className="flex items-center gap-4 mb-5">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0891b2]/10 text-lg font-bold text-[#0891b2]">
+                {expert.name.split(" ").map(n => n[0]).join("")}
+              </div>
+              <div>
+                <p className="font-bold text-gray-900">{expert.name}</p>
+                <p className="text-xs text-gray-500">{expert.role}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed italic">&laquo;{expert.quote}&raquo;</p>
           </div>
         </FadeUp>
       ))}

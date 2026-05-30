@@ -256,6 +256,51 @@ def delete_review(review_id: int, user: AdminUser = Depends(require_admin), db: 
     return {"ok": True}
 
 
+# ── Ambassadors CRUD ──
+
+@router.get("/ambassadors")
+def get_public_ambassadors(db: Session = Depends(get_db)):
+    from app.models import Ambassador
+    return [{"id": a.id, "name": a.name, "role": a.role, "quote": a.quote} for a in db.query(Ambassador).all()]
+
+@router.get("/admin/ambassadors")
+def get_ambassadors(user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Ambassador
+    return [{"id": a.id, "name": a.name, "role": a.role, "quote": a.quote} for a in db.query(Ambassador).all()]
+
+class AmbassadorRequest(BaseModel):
+    name: str
+    role: str
+    quote: str
+
+@router.post("/admin/ambassadors")
+def create_ambassador(body: AmbassadorRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Ambassador
+    a = Ambassador(name=body.name, role=body.role, quote=body.quote)
+    db.add(a)
+    db.commit()
+    db.refresh(a)
+    return {"id": a.id, "name": a.name, "role": a.role, "quote": a.quote}
+
+@router.put("/admin/ambassadors/{amb_id}")
+def update_ambassador(amb_id: int, body: AmbassadorRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Ambassador
+    a = db.query(Ambassador).filter(Ambassador.id == amb_id).first()
+    if not a: raise HTTPException(status_code=404)
+    a.name = body.name; a.role = body.role; a.quote = body.quote
+    db.commit()
+    return {"id": a.id, "name": a.name, "role": a.role, "quote": a.quote}
+
+@router.delete("/admin/ambassadors/{amb_id}")
+def delete_ambassador(amb_id: int, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Ambassador
+    a = db.query(Ambassador).filter(Ambassador.id == amb_id).first()
+    if not a: raise HTTPException(status_code=404)
+    db.delete(a)
+    db.commit()
+    return {"ok": True}
+
+
 # ── Plans Management ──
 
 @router.get("/admin/plans")

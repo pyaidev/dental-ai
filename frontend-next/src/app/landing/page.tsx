@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ScanLine, BarChart3, FileText, Bell, Brush, ClipboardList } from "lucide-react";
 import { FadeUp, ScaleIn, PulsingArrow, StepNumber, AnimatedCounter, FloatingParticles, GradientText, FeatureCard, PulsingBadge } from "@/components/landing/AnimatedSection";
-import { DynamicPricing, DynamicReviews } from "@/components/landing/DynamicSections";
+import { DynamicPricing, DynamicReviews, DynamicAmbassadors } from "@/components/landing/DynamicSections";
 
 const featureIcons = [ScanLine, BarChart3, FileText, Bell, Brush, ClipboardList];
 const featureColors = ["#0891b2", "#8b5cf6", "#f97316", "#10b981", "#ec4899", "#3b82f6"];
@@ -258,26 +258,7 @@ export default function LandingPage() {
             </div>
           </FadeUp>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {ambassadors.map((expert, i) => (
-              <FadeUp key={expert.name} delay={i * 0.15}>
-                <div className="rounded-2xl bg-white p-8 border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-4 mb-5">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0891b2]/10 text-lg font-bold text-[#0891b2]">
-                      {expert.name.split(" ").map(n => n[0]).join("")}
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{expert.name}</p>
-                      <p className="text-xs text-gray-500">{expert.role}</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 leading-relaxed italic">
-                    &laquo;{expert.quote}&raquo;
-                  </p>
-                </div>
-              </FadeUp>
-            ))}
-          </div>
+          <DynamicAmbassadors />
         </div>
       </section>
 
