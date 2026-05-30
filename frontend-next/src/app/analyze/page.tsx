@@ -561,6 +561,36 @@ function AnalyzeContent() {
                     <Download className="h-4 w-4" />
                     PDF
                   </motion.a>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    disabled={saving}
+                    onClick={async () => {
+                      setSaving(true);
+                      try {
+                        const tk = localStorage.getItem("dental_token");
+                        const resp = await fetch(`${API_BASE}/api/analysis/${result.id}/correct`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json", ...(tk ? { Authorization: `Bearer ${tk}` } : {}) },
+                          body: JSON.stringify({
+                            plaque_pct_front: result.plaque_pct_front,
+                            plaque_pct_right: result.plaque_pct_right,
+                            plaque_pct_left: result.plaque_pct_left,
+                          }),
+                        });
+                        if (resp.ok) {
+                          const updated = await resp.json();
+                          setResult({ ...result, ...updated });
+                          alert("PDF пересоздан!");
+                        }
+                      } catch {}
+                      setSaving(false);
+                    }}
+                    className="flex items-center gap-2 rounded-xl bg-slate-600 px-4 py-2.5 text-sm font-semibold text-white"
+                  >
+                    <Save className="h-4 w-4" />
+                    {saving ? "..." : "Пересоздать PDF"}
+                  </motion.button>
                   <motion.a
                     href={`https://wa.me/?text=${encodeURIComponent(`Отчёт о гигиене полости рта: ${window.location.origin}/report/${result.access_token}`)}`}
                     target="_blank"
