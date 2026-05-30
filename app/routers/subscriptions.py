@@ -43,6 +43,25 @@ PLANS = {
     },
 }
 
+# ── Load plans override from JSON file on startup ──────────────────────────────
+def _load_plans_override() -> None:
+    import json, os
+    path = "/opt/dental-ai/data/plans_override.json"
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            overrides = json.load(f)
+        for plan_key, fields in overrides.items():
+            if plan_key in PLANS:
+                for field in ("price", "reports_limit", "features"):
+                    if field in fields:
+                        PLANS[plan_key][field] = fields[field]
+    except Exception:
+        pass  # Don't crash on bad file
+
+_load_plans_override()
+
 
 def check_permission(user_id: int, feature: str, db: Session) -> bool:
     """Check if user's plan includes a feature. Admin = unlimited."""

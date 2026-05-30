@@ -62,7 +62,39 @@ app.include_router(notifications.router, prefix="/api", tags=["notifications"])
 @app.on_event("startup")
 def on_startup():
     init_db()
+    _migrate_add_order_columns()
     _create_default_admin()
+
+
+def _migrate_add_order_columns():
+    """Add order column to reviews and ambassadors if not present (idempotent)."""
+    from sqlalchemy import text
+    from app.database import engine
+    try:
+        with engine.connect() as conn:
+            # PostgreSQL: use IF NOT EXISTS; SQLite: ignore error
+            try:
+                conn.execute(text("ALTER TABLE reviews ADD COLUMN IF NOT EXISTS \"order\" INTEGER DEFAULT 0"))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                try:
+                    conn.execute(text("ALTER TABLE reviews ADD COLUMN \"order\" INTEGER DEFAULT 0"))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+            try:
+                conn.execute(text("ALTER TABLE ambassadors ADD COLUMN IF NOT EXISTS \"order\" INTEGER DEFAULT 0"))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                try:
+                    conn.execute(text("ALTER TABLE ambassadors ADD COLUMN \"order\" INTEGER DEFAULT 0"))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+    except Exception:
+        pass  # Don't break startup
 
 
 def _create_default_admin():

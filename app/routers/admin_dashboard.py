@@ -234,15 +234,15 @@ def assign_plan(user_id: int, body: AssignPlanRequest, user: AdminUser = Depends
 def get_public_reviews(db: Session = Depends(get_db)):
     """Public endpoint for landing page reviews."""
     from app.models import Review
-    reviews = db.query(Review).order_by(Review.id.desc()).all()
-    return [{"id": r.id, "name": r.name, "role": r.role, "quote": r.quote, "stars": r.stars} for r in reviews]
+    reviews = db.query(Review).order_by(Review.order.asc(), Review.id.asc()).all()
+    return [{"id": r.id, "name": r.name, "role": r.role, "quote": r.quote, "stars": r.stars, "order": r.order} for r in reviews]
 
 
 @router.get("/admin/reviews")
 def get_reviews(user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
     from app.models import Review
-    reviews = db.query(Review).order_by(Review.id.desc()).all()
-    return [{"id": r.id, "name": r.name, "role": r.role, "quote": r.quote, "stars": r.stars} for r in reviews]
+    reviews = db.query(Review).order_by(Review.order.asc(), Review.id.asc()).all()
+    return [{"id": r.id, "name": r.name, "role": r.role, "quote": r.quote, "stars": r.stars, "order": r.order} for r in reviews]
 
 
 class ReviewRequest(BaseModel):
@@ -261,6 +261,19 @@ def create_review(body: ReviewRequest, user: AdminUser = Depends(require_admin),
     return {"id": review.id, "name": review.name, "role": review.role, "quote": review.quote, "stars": review.stars}
 
 
+class ReorderRequest(BaseModel):
+    ids: list[int]
+
+
+@router.put("/admin/reviews/reorder")
+def reorder_reviews(body: ReorderRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Review
+    for idx, review_id in enumerate(body.ids):
+        db.query(Review).filter(Review.id == review_id).update({"order": idx})
+    db.commit()
+    return {"ok": True}
+
+
 @router.put("/admin/reviews/{review_id}")
 def update_review(review_id: int, body: ReviewRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
     from app.models import Review
@@ -272,7 +285,7 @@ def update_review(review_id: int, body: ReviewRequest, user: AdminUser = Depends
     review.quote = body.quote
     review.stars = body.stars
     db.commit()
-    return {"id": review.id, "name": review.name, "role": review.role, "quote": review.quote, "stars": review.stars}
+    return {"id": review.id, "name": review.name, "role": review.role, "quote": review.quote, "stars": review.stars, "order": review.order}
 
 
 @router.delete("/admin/reviews/{review_id}")
@@ -291,12 +304,14 @@ def delete_review(review_id: int, user: AdminUser = Depends(require_admin), db: 
 @router.get("/ambassadors")
 def get_public_ambassadors(db: Session = Depends(get_db)):
     from app.models import Ambassador
-    return [{"id": a.id, "name": a.name, "role": a.role, "quote": a.quote} for a in db.query(Ambassador).all()]
+    items = db.query(Ambassador).order_by(Ambassador.order.asc(), Ambassador.id.asc()).all()
+    return [{"id": a.id, "name": a.name, "role": a.role, "quote": a.quote, "order": a.order} for a in items]
 
 @router.get("/admin/ambassadors")
 def get_ambassadors(user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
     from app.models import Ambassador
-    return [{"id": a.id, "name": a.name, "role": a.role, "quote": a.quote} for a in db.query(Ambassador).all()]
+    items = db.query(Ambassador).order_by(Ambassador.order.asc(), Ambassador.id.asc()).all()
+    return [{"id": a.id, "name": a.name, "role": a.role, "quote": a.quote, "order": a.order} for a in items]
 
 class AmbassadorRequest(BaseModel):
     name: str
@@ -310,7 +325,15 @@ def create_ambassador(body: AmbassadorRequest, user: AdminUser = Depends(require
     db.add(a)
     db.commit()
     db.refresh(a)
-    return {"id": a.id, "name": a.name, "role": a.role, "quote": a.quote}
+    return {"id": a.id, "name": a.name, "role": a.role, "quote": a.quote, "order": a.order}
+
+@router.put("/admin/ambassadors/reorder")
+def reorder_ambassadors(body: ReorderRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Ambassador
+    for idx, amb_id in enumerate(body.ids):
+        db.query(Ambassador).filter(Ambassador.id == amb_id).update({"order": idx})
+    db.commit()
+    return {"ok": True}
 
 @router.put("/admin/ambassadors/{amb_id}")
 def update_ambassador(amb_id: int, body: AmbassadorRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
@@ -319,7 +342,7 @@ def update_ambassador(amb_id: int, body: AmbassadorRequest, user: AdminUser = De
     if not a: raise HTTPException(status_code=404)
     a.name = body.name; a.role = body.role; a.quote = body.quote
     db.commit()
-    return {"id": a.id, "name": a.name, "role": a.role, "quote": a.quote}
+    return {"id": a.id, "name": a.name, "role": a.role, "quote": a.quote, "order": a.order}
 
 @router.delete("/admin/ambassadors/{amb_id}")
 def delete_ambassador(amb_id: int, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
@@ -344,14 +367,43 @@ class PlanUpdateRequest(BaseModel):
     reports_limit: int
     features: list[str]
 
+PLANS_OVERRIDE_PATH = "/opt/dental-ai/data/plans_override.json"
+
+
+def _save_plans_override(plans: dict) -> None:
+    import json, os
+    os.makedirs(os.path.dirname(PLANS_OVERRIDE_PATH), exist_ok=True)
+    with open(PLANS_OVERRIDE_PATH, "w", encoding="utf-8") as f:
+        json.dump(plans, f, ensure_ascii=False, indent=2)
+
+
 @router.put("/admin/plans/{plan_key}")
 def update_plan(plan_key: str, body: PlanUpdateRequest, user: AdminUser = Depends(require_admin)):
+    import json
     from app.routers.subscriptions import PLANS
     if plan_key not in PLANS:
         raise HTTPException(status_code=404, detail="Plan not found")
     PLANS[plan_key]["price"] = body.price
     PLANS[plan_key]["reports_limit"] = body.reports_limit
     PLANS[plan_key]["features"] = body.features
+    # Persist override: save only overridden fields for each plan
+    try:
+        override: dict = {}
+        try:
+            import os
+            if os.path.exists(PLANS_OVERRIDE_PATH):
+                with open(PLANS_OVERRIDE_PATH, "r", encoding="utf-8") as f:
+                    override = json.load(f)
+        except Exception:
+            override = {}
+        override[plan_key] = {
+            "price": body.price,
+            "reports_limit": body.reports_limit,
+            "features": body.features,
+        }
+        _save_plans_override(override)
+    except Exception:
+        pass  # Don't fail the request if file write fails
     return {"ok": True, "plan": PLANS[plan_key]}
 
 

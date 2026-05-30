@@ -161,6 +161,7 @@ class Review(Base):
     role: Mapped[str] = mapped_column(String(255))
     quote: Mapped[str] = mapped_column(Text)
     stars: Mapped[int] = mapped_column(Integer, default=5)
+    order: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Ambassador(Base):
@@ -170,6 +171,7 @@ class Ambassador(Base):
     name: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(255))
     quote: Mapped[str] = mapped_column(Text)
+    order: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Patient(Base):

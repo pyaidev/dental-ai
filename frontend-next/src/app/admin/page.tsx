@@ -9,7 +9,7 @@ import {
   LogOut, LayoutDashboard, ScanLine, BarChart3, Settings, ExternalLink,
   Star, Trash2, Edit3, Plus, X, ChevronDown, Lock, Unlock,
   Calendar, Clock, RefreshCw, Eye, MessageSquare, Filter,
-  UserCheck, UserX, Search, Save, Package, Type
+  UserCheck, UserX, Search, Save, Package, Type, ChevronUp
 } from "lucide-react";
 import { API_BASE } from "@/lib/utils";
 
@@ -56,6 +56,7 @@ interface Review {
   role: string;
   quote: string;
   stars: number;
+  order?: number;
 }
 
 type TabKey = "overview" | "users" | "transactions" | "reviews" | "ambassadors" | "plans" | "celery" | "content";
@@ -401,6 +402,21 @@ export default function AdminPage() {
     setReviews(prev => prev.filter(x => x.id !== id));
   };
 
+  // Reorder reviews
+  const handleMoveReview = async (index: number, direction: "up" | "down") => {
+    const newReviews = [...reviews];
+    const swapIdx = direction === "up" ? index - 1 : index + 1;
+    if (swapIdx < 0 || swapIdx >= newReviews.length) return;
+    [newReviews[index], newReviews[swapIdx]] = [newReviews[swapIdx], newReviews[index]];
+    setReviews(newReviews);
+    const ids = newReviews.map(r => r.id!).filter(Boolean);
+    await fetch(`${API_BASE}/api/admin/reviews/reorder`, {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+  };
+
   // ─── Derived data ───────────────────────────────────────────────────────────
 
   const filteredUsers = users.filter(u => {
@@ -712,7 +728,9 @@ export default function AdminPage() {
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                           {filteredUsers.map(u => (
-                            <tr key={u.id} className={`group hover:bg-slate-50 transition-colors ${u.is_active === false ? "opacity-50" : ""}`}>
+                            <tr key={u.id}
+                              onClick={() => { setDetailUser(u); setDetailData(null); fetch(`${API_BASE}/api/admin/users/${u.id}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(setDetailData).catch(() => {}); }}
+                              className={`group hover:bg-slate-50 transition-colors cursor-pointer ${u.is_active === false ? "opacity-50" : ""}`}>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
                                   <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${
@@ -749,7 +767,7 @@ export default function AdminPage() {
                               </td>
                               <td className="px-4 py-3 text-[11px] text-slate-400">{fmt(u.last_login)}</td>
                               <td className="px-4 py-3 text-[11px] text-slate-400">{fmt(u.created_at)}</td>
-                              <td className="px-4 py-3">
+                              <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center justify-end gap-1.5">
                                   <button
                                     onClick={() => setAssignUser(u)}
@@ -934,6 +952,16 @@ export default function AdminPage() {
                               ))}
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => handleMoveReview(i, "up")} disabled={i === 0}
+                                title="Вверх"
+                                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all disabled:opacity-30">
+                                <ChevronUp className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => handleMoveReview(i, "down")} disabled={i === reviews.length - 1}
+                                title="Вниз"
+                                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all disabled:opacity-30">
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              </button>
                               <button onClick={() => setEditReview(r)}
                                 className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all">
                                 <Edit3 className="h-3.5 w-3.5" />
@@ -1077,8 +1105,8 @@ export default function AdminPage() {
 // ─── Ambassadors Manager ────────────────────────────────────────────────────
 
 function AmbassadorsManager({ token }: { token: string | null }) {
-  const [items, setItems] = useState<{ id: number; name: string; role: string; quote: string }[]>([]);
-  const [editing, setEditing] = useState<{ id: number; name: string; role: string; quote: string } | "new" | null>(null);
+  const [items, setItems] = useState<{ id: number; name: string; role: string; quote: string; order?: number }[]>([]);
+  const [editing, setEditing] = useState<{ id: number; name: string; role: string; quote: string; order?: number } | "new" | null>(null);
   const [form, setForm] = useState({ name: "", role: "", quote: "" });
 
   useEffect(() => {
@@ -1099,15 +1127,29 @@ function AmbassadorsManager({ token }: { token: string | null }) {
     });
     if (resp.ok) {
       const data = await resp.json();
-      if (isNew) setItems([data, ...items]);
-      else setItems(items.map(i => i.id === data.id ? data : i));
+      if (isNew) setItems(prev => [...prev, data]);
+      else setItems(prev => prev.map(i => i.id === data.id ? data : i));
       setEditing(null);
     }
   };
 
   const handleDelete = async (id: number) => {
     await fetch(`${API_BASE}/api/admin/ambassadors/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-    setItems(items.filter(i => i.id !== id));
+    setItems(prev => prev.filter(i => i.id !== id));
+  };
+
+  const handleMove = async (index: number, direction: "up" | "down") => {
+    const newItems = [...items];
+    const swapIdx = direction === "up" ? index - 1 : index + 1;
+    if (swapIdx < 0 || swapIdx >= newItems.length) return;
+    [newItems[index], newItems[swapIdx]] = [newItems[swapIdx], newItems[index]];
+    setItems(newItems);
+    const ids = newItems.map(a => a.id);
+    await fetch(`${API_BASE}/api/admin/ambassadors/reorder`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ids }),
+    });
   };
 
   return (
@@ -1136,15 +1178,29 @@ function AmbassadorsManager({ token }: { token: string | null }) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {items.map(a => (
+        {items.map((a, i) => (
           <div key={a.id} className="rounded-xl border bg-white p-5 group">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                {a.name.split(" ").map(n => n[0]).join("")}
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary shrink-0">
+                  {a.name.split(" ").map(n => n[0]).join("")}
+                </div>
+                <div>
+                  <p className="font-bold text-sm">{a.name}</p>
+                  <p className="text-xs text-gray-400">{a.role}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-sm">{a.name}</p>
-                <p className="text-xs text-gray-400">{a.role}</p>
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => handleMove(i, "up")} disabled={i === 0}
+                  title="Вверх"
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all disabled:opacity-30">
+                  <ChevronUp className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => handleMove(i, "down")} disabled={i === items.length - 1}
+                  title="Вниз"
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all disabled:opacity-30">
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
             <p className="text-sm text-gray-600 italic mb-3">&laquo;{a.quote}&raquo;</p>
