@@ -60,10 +60,12 @@ async def process_update(update: dict):
             await send_message(
                 chat_id,
                 "🦷 <b>Odonta Index AI</b>\n\n"
-                "Команды:\n"
-                "/start — подключить уведомления\n"
-                "/status — последний анализ\n"
-                "/stop — отключить уведомления",
+                "Я не понял ваше сообщение.\n\n"
+                "<b>Доступные команды:</b>\n"
+                "▶️ /start — подключить уведомления\n"
+                "📊 /status — последний анализ\n"
+                "🔕 /stop — отключить уведомления\n\n"
+                "🌐 <a href='https://odontaindex.ru'>odontaindex.ru</a>",
             )
     finally:
         db.close()

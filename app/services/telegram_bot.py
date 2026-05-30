@@ -49,8 +49,35 @@ async def request_phone(chat_id: str) -> bool:
 
 
 async def handle_start(chat_id: str, user_name: str) -> bool:
-    """Handle /start command."""
-    return await request_phone(chat_id)
+    """Handle /start command — show welcome info first, then request phone."""
+    greeting = user_name if user_name else "пациент"
+    await send_message(
+        chat_id,
+        f"🦷 <b>Добро пожаловать в Odonta Index AI!</b>\n\n"
+        f"Здравствуйте, {greeting}! 👋\n\n"
+        f"Я — бот сервиса <b>Odonta Index AI</b> для анализа гигиены полости рта.\n\n"
+        f"<b>Что я умею:</b>\n"
+        f"📊 Отправлять результаты анализов\n"
+        f"🔔 Напоминать о плановой гигиене\n"
+        f"📋 Показывать историю визитов\n"
+        f"📄 Отправлять PDF-отчёты\n\n"
+        f"<b>Команды:</b>\n"
+        f"/start — подключить уведомления\n"
+        f"/status — последний анализ\n"
+        f"/stop — отключить уведомления\n\n"
+        f"🌐 <a href='https://odontaindex.ru'>odontaindex.ru</a>\n\n"
+        f"Для начала поделитесь номером телефона — "
+        f"так я найду вашу карту пациента 👇",
+        reply_markup={
+            "keyboard": [[{
+                "text": "📱 Отправить номер телефона",
+                "request_contact": True,
+            }]],
+            "resize_keyboard": True,
+            "one_time_keyboard": True,
+        },
+    )
+    return True
 
 
 async def handle_contact(chat_id: str, phone: str, db: Session) -> bool:
