@@ -68,11 +68,12 @@ function SubscriptionContent() {
         body: JSON.stringify({ plan: selectedPlan }),
       });
       const data = await resp.json();
-      if (data.payment_url) {
+      if (!resp.ok) {
+        setMessage(data.detail || "Ошибка");
+      } else if (data.payment_url) {
         window.location.href = data.payment_url;
       } else {
         setMessage(data.message);
-        // Refresh subscription info
         fetch(`${API_BASE}/api/subscription`, { headers: { Authorization: `Bearer ${token}` } })
           .then(r => r.json()).then(setSub);
       }

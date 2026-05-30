@@ -117,8 +117,14 @@ async def purchase(
     reports_limit = plan_info["reports_limit"]
     order_id = f"odonta_{user.id}_{uuid.uuid4().hex[:8]}"
 
-    # Free plan — activate immediately
+    # Free plan — only once per user
     if body.plan == "free":
+        existing_free = db.query(Subscription).filter(
+            Subscription.user_id == user.id,
+            Subscription.plan == "free",
+        ).first()
+        if existing_free:
+            raise HTTPException(status_code=400, detail="Бесплатный план можно активировать только один раз. Выберите платный тариф.")
         sub = Subscription(
             user_id=user.id,
             plan=body.plan,
