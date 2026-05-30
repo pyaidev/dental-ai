@@ -76,14 +76,14 @@ export default function PeriodontalChart({ patientId }: Props) {
         const tooth = data[String(t)] || defaultTooth();
         const hasDeep = [...tooth.buccal, ...tooth.lingual].some(v => v >= 4);
         return (
-          <div key={t} className={`flex-shrink-0 w-14 border rounded-lg p-1 text-center ${hasDeep ? "border-danger bg-red-50" : "border-card-border"}`}>
+          <div key={t} className={`flex-shrink-0 w-[72px] border rounded-lg p-1.5 text-center ${hasDeep ? "border-danger bg-red-50" : "border-card-border"}`}>
             <p className={`text-[10px] font-bold ${tooth.bleeding ? "text-danger" : "text-muted"}`}>{t}{tooth.bleeding ? "🩸" : ""}</p>
             {/* Buccal */}
             <div className="flex gap-px justify-center">
               {tooth.buccal.map((v, i) => (
                 <input key={`b${i}`} type="number" min={0} max={12} value={v}
                   onChange={(e) => updateTooth(String(t), "buccal", i, parseInt(e.target.value) || 0)}
-                  className={`w-4 h-5 text-[9px] text-center border rounded outline-none ${v >= 4 ? "border-danger text-danger bg-red-50" : "border-slate-200"}`}
+                  className={`w-7 h-7 text-xs text-center border rounded outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 ${v >= 4 ? "border-danger text-danger bg-red-50 font-bold" : "border-slate-200"}`}
                 />
               ))}
             </div>
@@ -92,7 +92,7 @@ export default function PeriodontalChart({ patientId }: Props) {
               {tooth.lingual.map((v, i) => (
                 <input key={`l${i}`} type="number" min={0} max={12} value={v}
                   onChange={(e) => updateTooth(String(t), "lingual", i, parseInt(e.target.value) || 0)}
-                  className={`w-4 h-5 text-[9px] text-center border rounded outline-none ${v >= 4 ? "border-danger text-danger bg-red-50" : "border-slate-200"}`}
+                  className={`w-7 h-7 text-xs text-center border rounded outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 ${v >= 4 ? "border-danger text-danger bg-red-50 font-bold" : "border-slate-200"}`}
                 />
               ))}
             </div>
