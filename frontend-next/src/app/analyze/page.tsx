@@ -75,6 +75,7 @@ function AnalyzeContent() {
   const [editing, setEditing] = useState(false);
   const [editingRecs, setEditingRecs] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [clinicLogo, setClinicLogo] = useState<File | null>(null);
   const [chartTab, setChartTab] = useState<string | null>(null);
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [paywallFeature, setPaywallFeature] = useState("");
@@ -202,6 +203,7 @@ function AnalyzeContent() {
     formData.append("photo_front", photos.front);
     formData.append("photo_right", photos.right);
     formData.append("photo_left", photos.left);
+    if (clinicLogo) formData.append("clinic_logo", clinicLogo);
 
     try {
       const token = localStorage.getItem("dental_token");
@@ -426,6 +428,23 @@ function AnalyzeContent() {
                           placeholder="Телефон"
                           className="w-full rounded-xl border border-card-border bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10"
                         />
+                      </div>
+                      <div className="mt-3">
+                        <label className="block text-xs text-muted mb-1.5">Логотип клиники (для PDF)</label>
+                        <div className="flex items-center gap-3">
+                          {clinicLogo && (
+                            <img src={URL.createObjectURL(clinicLogo)} alt="Logo" className="h-10 w-auto rounded border border-card-border" />
+                          )}
+                          <label className="flex items-center gap-2 cursor-pointer rounded-xl border border-dashed border-card-border px-4 py-2 text-xs text-muted hover:border-primary hover:text-primary transition-colors">
+                            <span>{clinicLogo ? "Заменить" : "Загрузить логотип"}</span>
+                            <input type="file" accept="image/*" className="hidden"
+                              onChange={(e) => { if (e.target.files?.[0]) setClinicLogo(e.target.files[0]); }}
+                            />
+                          </label>
+                          {clinicLogo && (
+                            <button onClick={() => setClinicLogo(null)} className="text-xs text-red-400 hover:text-red-600">Удалить</button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
