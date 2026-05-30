@@ -2,7 +2,17 @@
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-12">
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <nav className="border-b border-gray-100 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+          <a href="/" className="flex items-center"><img src="/logo.png" alt="Odonta Index AI" className="h-14" /></a>
+          <div className="flex items-center gap-3">
+            <a href="/login" className="text-sm text-gray-500 hover:text-gray-900">Войти</a>
+            <a href="/register" className="rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700">Регистрация</a>
+          </div>
+        </div>
+      </nav>
+      <div className="flex-1 px-4 py-12">
       <div className="mx-auto max-w-3xl bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
         <h1 className="text-2xl font-bold mb-6">Политика конфиденциальности</h1>
         <p className="text-xs text-gray-400 mb-6">Дата публикации: 28 мая 2026 г.</p>
@@ -78,6 +88,17 @@ export default function PrivacyPage() {
           <p>Мы оставляем за собой право изменять настоящую Политику. Актуальная версия всегда доступна на данной странице.</p>
         </div>
       </div>
+      </div>
+      <footer className="border-t border-gray-100 bg-white py-6">
+        <div className="mx-auto max-w-6xl px-6 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-gray-400 mb-3">
+            <a href="/privacy" className="hover:text-cyan-600">Политика обработки ПД</a>
+            <a href="/terms" className="hover:text-cyan-600">Пользовательское соглашение</a>
+            <a href="/consent" className="hover:text-cyan-600">Согласие на обработку ПД</a>
+          </div>
+          <p className="text-[11px] text-gray-300">ИП Коростелев А.А. · ИНН: 312334497069 · © 2026 Odonta Index AI</p>
+        </div>
+      </footer>
     </div>
   );
 }
