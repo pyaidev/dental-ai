@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ScanLine, BarChart3, FileText, Bell, Brush, ClipboardList } from "lucide-react";
-import { FadeUp, ScaleIn, PulsingArrow, StepNumber, AnimatedCounter } from "@/components/landing/AnimatedSection";
+import { FadeUp, ScaleIn, PulsingArrow, StepNumber, AnimatedCounter, FloatingParticles, GradientText, FeatureCard, PulsingBadge } from "@/components/landing/AnimatedSection";
 
 const featureIcons = [ScanLine, BarChart3, FileText, Bell, Brush, ClipboardList];
 const featureColors = ["#0891b2", "#8b5cf6", "#f97316", "#10b981", "#ec4899", "#3b82f6"];
@@ -99,6 +99,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#f0fdfa] via-white to-white" />
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-[#0891b2]/5 rounded-full blur-[120px]" />
         <div className="absolute top-40 right-1/4 w-72 h-72 bg-cyan-200/10 rounded-full blur-[100px]" />
+        <FloatingParticles />
 
         <div className="relative mx-auto max-w-6xl px-6">
           <FadeUp>
@@ -111,7 +112,7 @@ export default function LandingPage() {
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.1]">
                 AI-анализ гигиены
                 <br />
-                <span className="text-[#0891b2]">полости рта</span>
+                <GradientText>полости рта</GradientText>
               </h1>
 
               <p className="mt-6 text-lg text-gray-500 max-w-xl mx-auto leading-relaxed">
@@ -136,12 +137,12 @@ export default function LandingPage() {
           <FadeUp delay={0.3}>
             <div className="mt-20 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
               {[
-                { value: "5", label: "индексов гигиены" },
-                { value: "30 сек", label: "на анализ" },
-                { value: "95%", label: "точность AI" },
+                { value: 5, suffix: "", label: "индексов гигиены" },
+                { value: 30, suffix: " сек", label: "на анализ" },
+                { value: 95, suffix: "%", label: "точность AI" },
               ].map((stat) => (
                 <div key={stat.label} className="text-center">
-                  <div className="text-3xl font-bold text-[#0891b2]">{stat.value}</div>
+                  <div className="text-3xl font-bold text-[#0891b2]"><AnimatedCounter value={stat.value} suffix={stat.suffix} /></div>
                   <div className="mt-1 text-xs text-gray-400">{stat.label}</div>
                 </div>
               ))}
@@ -167,15 +168,15 @@ export default function LandingPage() {
               const Icon = featureIcons[i];
               const color = featureColors[i];
               return (
-                <FadeUp key={f.title} delay={i * 0.08}>
-                  <div className="group rounded-2xl bg-white p-7 transition-all hover:shadow-lg hover:shadow-gray-200/50 hover:-translate-y-1 border border-gray-100">
+                <FeatureCard key={f.title} delay={i * 0.08}>
+                  <div className="group rounded-2xl bg-white p-7 border border-gray-100">
                     <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: color + "12" }}>
                       <Icon className="h-6 w-6" style={{ color }} />
                     </div>
                     <h3 className="text-base font-bold text-gray-900 mb-2">{f.title}</h3>
                     <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
                   </div>
-                </FadeUp>
+                </FeatureCard>
               );
             })}
           </div>
@@ -231,9 +232,11 @@ export default function LandingPage() {
                     : "bg-white border border-gray-100 hover:shadow-lg"
                 }`}>
                   {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-3 py-0.5 text-[10px] font-bold text-amber-900 whitespace-nowrap">
-                      Хит продаж
-                    </div>
+                    <PulsingBadge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <div className="rounded-full bg-amber-400 px-3 py-0.5 text-[10px] font-bold text-amber-900 whitespace-nowrap shadow-lg shadow-amber-400/30">
+                        Хит продаж
+                      </div>
+                    </PulsingBadge>
                   )}
                   <h3 className={`text-base font-bold ${plan.popular ? "text-white" : "text-gray-900"}`}>Odonta Index {plan.name}</h3>
                   <p className={`mt-1 text-xs ${plan.popular ? "text-white/70" : "text-gray-400"}`}>{plan.sub}</p>
