@@ -9,7 +9,7 @@ import {
   LogOut, LayoutDashboard, ScanLine, BarChart3, Settings, ExternalLink,
   Star, Trash2, Edit3, Plus, X, ChevronDown, Lock, Unlock,
   Calendar, Clock, RefreshCw, Eye, MessageSquare, Filter,
-  UserCheck, UserX, Search, Save, Package
+  UserCheck, UserX, Search, Save, Package, Type
 } from "lucide-react";
 import { API_BASE } from "@/lib/utils";
 
@@ -58,7 +58,7 @@ interface Review {
   stars: number;
 }
 
-type TabKey = "overview" | "users" | "transactions" | "reviews" | "ambassadors" | "plans" | "celery";
+type TabKey = "overview" | "users" | "transactions" | "reviews" | "ambassadors" | "plans" | "celery" | "content";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -433,6 +433,7 @@ export default function AdminPage() {
     { key: "reviews", label: "Отзывы", icon: MessageSquare },
     { key: "ambassadors", label: "Амбассадоры", icon: Star },
     { key: "celery", label: "Задачи", icon: Activity },
+    { key: "content", label: "Контент", icon: Type },
   ];
 
   return (
@@ -977,6 +978,11 @@ export default function AdminPage() {
           {tab === "celery" && (
             <CeleryMonitor token={token} />
           )}
+
+          {/* ─── Content Tab ─── */}
+          {tab === "content" && (
+            <ContentManager token={token} />
+          )}
         </div>
       </div>
 
@@ -1338,6 +1344,405 @@ function CeleryMonitor({ token }: { token: string | null }) {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+// ─── Content Manager ─────────────────────────────────────────────────────────
+
+interface SiteSettings {
+  hero: {
+    badge?: string;
+    title?: string;
+    title_gradient?: string;
+    subtitle?: string;
+    cta_primary?: string;
+    cta_secondary?: string;
+  };
+  features: { title: string; desc: string }[];
+  steps: { num: string; title: string; desc: string }[];
+  stats: { value: number; suffix: string; label: string }[];
+  cta: {
+    title?: string;
+    title_line2?: string;
+    subtitle?: string;
+    button?: string;
+  };
+  footer: {
+    company?: string;
+    inn?: string;
+    ogrnip?: string;
+    address?: string;
+    copyright?: string;
+  };
+}
+
+const EMPTY_SETTINGS: SiteSettings = {
+  hero: { badge: "", title: "", title_gradient: "", subtitle: "", cta_primary: "", cta_secondary: "" },
+  features: Array.from({ length: 6 }, () => ({ title: "", desc: "" })),
+  steps: Array.from({ length: 4 }, (_, i) => ({ num: String(i + 1).padStart(2, "0"), title: "", desc: "" })),
+  stats: [
+    { value: 5, suffix: "", label: "" },
+    { value: 30, suffix: " сек", label: "" },
+    { value: 95, suffix: "%", label: "" },
+  ],
+  cta: { title: "", title_line2: "", subtitle: "", button: "" },
+  footer: { company: "", inn: "", ogrnip: "", address: "", copyright: "" },
+};
+
+type ContentSection = "hero" | "features" | "steps" | "stats" | "cta" | "footer";
+
+function ContentManager({ token }: { token: string | null }) {
+  const [settings, setSettings] = useState<SiteSettings>(EMPTY_SETTINGS);
+  const [activeSection, setActiveSection] = useState<ContentSection>("hero");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/admin/site-settings`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          setSettings({
+            hero: { ...EMPTY_SETTINGS.hero, ...data.hero },
+            features: data.features?.length === 6 ? data.features : EMPTY_SETTINGS.features.map((e, i) => data.features?.[i] ?? e),
+            steps: data.steps?.length === 4 ? data.steps : EMPTY_SETTINGS.steps.map((e, i) => data.steps?.[i] ?? e),
+            stats: data.stats?.length === 3 ? data.stats : EMPTY_SETTINGS.stats.map((e, i) => data.stats?.[i] ?? e),
+            cta: { ...EMPTY_SETTINGS.cta, ...data.cta },
+            footer: { ...EMPTY_SETTINGS.footer, ...data.footer },
+          });
+        }
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, [token]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMsg(null);
+    try {
+      const resp = await fetch(`${API_BASE}/api/admin/site-settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(settings),
+      });
+      if (resp.ok) {
+        setMsg({ type: "success", text: "Контент сохранён!" });
+        setTimeout(() => setMsg(null), 3000);
+      } else {
+        setMsg({ type: "error", text: "Ошибка при сохранении" });
+      }
+    } catch {
+      setMsg({ type: "error", text: "Ошибка сети" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputCls = "w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 bg-white";
+  const textareaCls = `${inputCls} resize-none`;
+  const labelCls = "block text-xs font-medium text-slate-600 mb-1";
+
+  const SECTIONS: { key: ContentSection; label: string }[] = [
+    { key: "hero", label: "Герой" },
+    { key: "features", label: "Возможности" },
+    { key: "steps", label: "Шаги" },
+    { key: "stats", label: "Статистика" },
+    { key: "cta", label: "CTA блок" },
+    { key: "footer", label: "Футер" },
+  ];
+
+  if (!loaded) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="h-8 w-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-slate-500">Управление контентом лендинга</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {msg && (
+            <span className={`text-sm font-medium ${msg.type === "success" ? "text-emerald-600" : "text-red-500"}`}>
+              {msg.text}
+            </span>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50 shadow-sm"
+          >
+            <Save className="h-4 w-4" />
+            {saving ? "Сохранение..." : "Сохранить всё"}
+          </button>
+        </div>
+      </div>
+
+      {/* Section tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {SECTIONS.map(s => (
+          <button
+            key={s.key}
+            onClick={() => setActiveSection(s.key)}
+            className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+              activeSection === s.key
+                ? "bg-cyan-500 text-white shadow-sm"
+                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Section editors */}
+      <motion.div
+        key={activeSection}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="rounded-2xl bg-white border border-slate-100 shadow-sm p-6"
+      >
+        {/* ── Hero ── */}
+        {activeSection === "hero" && (
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 mb-4">Hero секция</h3>
+            <div>
+              <label className={labelCls}>Бейдж (маленькая строка сверху)</label>
+              <input className={inputCls} value={settings.hero.badge ?? ""} placeholder="Используют 50+ стоматологий"
+                onChange={e => setSettings(s => ({ ...s, hero: { ...s.hero, badge: e.target.value } }))} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Заголовок (обычный текст)</label>
+                <input className={inputCls} value={settings.hero.title ?? ""} placeholder="AI-анализ гигиены"
+                  onChange={e => setSettings(s => ({ ...s, hero: { ...s.hero, title: e.target.value } }))} />
+              </div>
+              <div>
+                <label className={labelCls}>Заголовок (градиентная часть)</label>
+                <input className={inputCls} value={settings.hero.title_gradient ?? ""} placeholder="полости рта"
+                  onChange={e => setSettings(s => ({ ...s, hero: { ...s.hero, title_gradient: e.target.value } }))} />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Подзаголовок</label>
+              <textarea className={textareaCls} rows={3} value={settings.hero.subtitle ?? ""}
+                placeholder="Загрузите фото зубов — нейросеть определит налёт..."
+                onChange={e => setSettings(s => ({ ...s, hero: { ...s.hero, subtitle: e.target.value } }))} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Кнопка CTA (основная)</label>
+                <input className={inputCls} value={settings.hero.cta_primary ?? ""} placeholder="Попробовать бесплатно"
+                  onChange={e => setSettings(s => ({ ...s, hero: { ...s.hero, cta_primary: e.target.value } }))} />
+              </div>
+              <div>
+                <label className={labelCls}>Кнопка CTA (вторичная)</label>
+                <input className={inputCls} value={settings.hero.cta_secondary ?? ""} placeholder="Как это работает"
+                  onChange={e => setSettings(s => ({ ...s, hero: { ...s.hero, cta_secondary: e.target.value } }))} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Features ── */}
+        {activeSection === "features" && (
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 mb-4">6 карточек возможностей</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {settings.features.map((f, i) => (
+                <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Карточка {i + 1}</p>
+                  <div>
+                    <label className={labelCls}>Заголовок</label>
+                    <input className={inputCls} value={f.title} placeholder={`Возможность ${i + 1}`}
+                      onChange={e => setSettings(s => {
+                        const features = [...s.features];
+                        features[i] = { ...features[i], title: e.target.value };
+                        return { ...s, features };
+                      })} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Описание</label>
+                    <textarea className={textareaCls} rows={2} value={f.desc} placeholder="Краткое описание..."
+                      onChange={e => setSettings(s => {
+                        const features = [...s.features];
+                        features[i] = { ...features[i], desc: e.target.value };
+                        return { ...s, features };
+                      })} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Steps ── */}
+        {activeSection === "steps" && (
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 mb-4">4 шага процесса</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {settings.steps.map((step, i) => (
+                <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Шаг {step.num}</p>
+                  <div>
+                    <label className={labelCls}>Номер (отображается крупно)</label>
+                    <input className={inputCls} value={step.num} placeholder="01"
+                      onChange={e => setSettings(s => {
+                        const steps = [...s.steps];
+                        steps[i] = { ...steps[i], num: e.target.value };
+                        return { ...s, steps };
+                      })} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Заголовок</label>
+                    <input className={inputCls} value={step.title} placeholder={`Шаг ${i + 1}`}
+                      onChange={e => setSettings(s => {
+                        const steps = [...s.steps];
+                        steps[i] = { ...steps[i], title: e.target.value };
+                        return { ...s, steps };
+                      })} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Описание</label>
+                    <textarea className={textareaCls} rows={2} value={step.desc} placeholder="Описание шага..."
+                      onChange={e => setSettings(s => {
+                        const steps = [...s.steps];
+                        steps[i] = { ...steps[i], desc: e.target.value };
+                        return { ...s, steps };
+                      })} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Stats ── */}
+        {activeSection === "stats" && (
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 mb-4">3 блока статистики</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {settings.stats.map((stat, i) => (
+                <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Показатель {i + 1}</p>
+                  <div>
+                    <label className={labelCls}>Числовое значение</label>
+                    <input type="number" className={inputCls} value={stat.value}
+                      onChange={e => setSettings(s => {
+                        const stats = [...s.stats];
+                        stats[i] = { ...stats[i], value: Number(e.target.value) };
+                        return { ...s, stats };
+                      })} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Суффикс (напр: %, " сек")</label>
+                    <input className={inputCls} value={stat.suffix}
+                      onChange={e => setSettings(s => {
+                        const stats = [...s.stats];
+                        stats[i] = { ...stats[i], suffix: e.target.value };
+                        return { ...s, stats };
+                      })} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Подпись</label>
+                    <input className={inputCls} value={stat.label} placeholder="индексов гигиены"
+                      onChange={e => setSettings(s => {
+                        const stats = [...s.stats];
+                        stats[i] = { ...stats[i], label: e.target.value };
+                        return { ...s, stats };
+                      })} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── CTA ── */}
+        {activeSection === "cta" && (
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 mb-4">CTA блок (призыв к действию)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Заголовок (первая строка)</label>
+                <input className={inputCls} value={settings.cta.title ?? ""} placeholder="Начните анализировать"
+                  onChange={e => setSettings(s => ({ ...s, cta: { ...s.cta, title: e.target.value } }))} />
+              </div>
+              <div>
+                <label className={labelCls}>Заголовок (вторая строка)</label>
+                <input className={inputCls} value={settings.cta.title_line2 ?? ""} placeholder="уже сегодня"
+                  onChange={e => setSettings(s => ({ ...s, cta: { ...s.cta, title_line2: e.target.value } }))} />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Подзаголовок</label>
+              <textarea className={textareaCls} rows={2} value={settings.cta.subtitle ?? ""}
+                placeholder="Регистрация бесплатна. Первые 5 отчётов — в подарок."
+                onChange={e => setSettings(s => ({ ...s, cta: { ...s.cta, subtitle: e.target.value } }))} />
+            </div>
+            <div>
+              <label className={labelCls}>Текст кнопки</label>
+              <input className={inputCls} value={settings.cta.button ?? ""} placeholder="Создать аккаунт"
+                onChange={e => setSettings(s => ({ ...s, cta: { ...s.cta, button: e.target.value } }))} />
+            </div>
+          </div>
+        )}
+
+        {/* ── Footer ── */}
+        {activeSection === "footer" && (
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 mb-4">Футер</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Название компании</label>
+                <input className={inputCls} value={settings.footer.company ?? ""}
+                  placeholder="ИП Коростелев Александр Андреевич"
+                  onChange={e => setSettings(s => ({ ...s, footer: { ...s.footer, company: e.target.value } }))} />
+              </div>
+              <div>
+                <label className={labelCls}>ИНН</label>
+                <input className={inputCls} value={settings.footer.inn ?? ""} placeholder="312334497069"
+                  onChange={e => setSettings(s => ({ ...s, footer: { ...s.footer, inn: e.target.value } }))} />
+              </div>
+              <div>
+                <label className={labelCls}>ОГРНИП</label>
+                <input className={inputCls} value={settings.footer.ogrnip ?? ""} placeholder="323508100020560"
+                  onChange={e => setSettings(s => ({ ...s, footer: { ...s.footer, ogrnip: e.target.value } }))} />
+              </div>
+              <div>
+                <label className={labelCls}>Строка копирайта</label>
+                <input className={inputCls} value={settings.footer.copyright ?? ""} placeholder="© 2026 Odonta Index AI"
+                  onChange={e => setSettings(s => ({ ...s, footer: { ...s.footer, copyright: e.target.value } }))} />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Адрес</label>
+              <input className={inputCls} value={settings.footer.address ?? ""}
+                placeholder="140002, Московская обл, г. Люберцы, ул. Кирова, д. 9, корп. 2"
+                onChange={e => setSettings(s => ({ ...s, footer: { ...s.footer, address: e.target.value } }))} />
+            </div>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Preview hint */}
+      <div className="flex items-center gap-2 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-400">
+        <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+        После сохранения изменения появятся на лендинге при следующей загрузке страницы.
+        <a href="/" target="_blank" className="ml-auto text-cyan-600 hover:underline whitespace-nowrap">
+          Открыть лендинг →
+        </a>
+      </div>
     </div>
   );
 }

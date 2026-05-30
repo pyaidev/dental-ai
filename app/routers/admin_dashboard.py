@@ -355,6 +355,127 @@ def update_plan(plan_key: str, body: PlanUpdateRequest, user: AdminUser = Depend
     return {"ok": True, "plan": PLANS[plan_key]}
 
 
+# ── Site Settings ──
+
+_DEFAULT_SITE_SETTINGS = {
+    "hero": {
+        "badge": "Используют 50+ стоматологий",
+        "title": "AI-анализ гигиены",
+        "title_gradient": "полости рта",
+        "subtitle": "Загрузите фото зубов — нейросеть определит налёт, рассчитает индексы и подберёт средства гигиены за 30 секунд",
+        "cta_primary": "Попробовать бесплатно",
+        "cta_secondary": "Как это работает",
+    },
+    "features": [
+        {"title": "AI-анализ налёта", "desc": "Нейросеть YOLOv8 определяет зоны налёта по фото с индикатором"},
+        {"title": "5 индексов гигиены", "desc": "Фёдорова-Володкиной, API Lange, OHI-S, Silness-Löe, PHP"},
+        {"title": "PDF-отчёты", "desc": "Профессиональные отчёты с QR-кодом для пациента"},
+        {"title": "Telegram + Max", "desc": "Автоматические напоминания пациентам о визитах"},
+        {"title": "Ёршикограмма", "desc": "Интерактивная карта межзубных промежутков"},
+        {"title": "Пародонтограмма", "desc": "Глубина карманов, кровоточивость, подвижность"},
+    ],
+    "steps": [
+        {"num": "01", "title": "Загрузите фото", "desc": "3 фотографии зубов с индикатором налёта"},
+        {"num": "02", "title": "AI анализирует", "desc": "Нейросеть определяет налёт и рассчитывает индексы"},
+        {"num": "03", "title": "Получите отчёт", "desc": "PDF с рекомендациями по средствам гигиены"},
+        {"num": "04", "title": "Отправьте пациенту", "desc": "Через Telegram, Max или email — в один клик"},
+    ],
+    "stats": [
+        {"value": 5, "suffix": "", "label": "индексов гигиены"},
+        {"value": 30, "suffix": " сек", "label": "на анализ"},
+        {"value": 95, "suffix": "%", "label": "точность AI"},
+    ],
+    "cta": {
+        "title": "Начните анализировать",
+        "title_line2": "уже сегодня",
+        "subtitle": "Регистрация бесплатна. Первые 5 отчётов — в подарок.",
+        "button": "Создать аккаунт",
+    },
+    "footer": {
+        "company": "ИП Коростелев Александр Андреевич",
+        "inn": "312334497069",
+        "ogrnip": "323508100020560",
+        "address": "140002, Московская обл, г. Люберцы, ул. Кирова, д. 9, корп. 2",
+        "copyright": "© 2026 Odonta Index AI",
+    },
+}
+
+
+def _get_or_create_settings(db: Session):
+    import json
+    from app.models import SiteSettings
+    row = db.query(SiteSettings).first()
+    if not row:
+        row = SiteSettings(
+            hero=json.dumps(_DEFAULT_SITE_SETTINGS["hero"], ensure_ascii=False),
+            features=json.dumps(_DEFAULT_SITE_SETTINGS["features"], ensure_ascii=False),
+            steps=json.dumps(_DEFAULT_SITE_SETTINGS["steps"], ensure_ascii=False),
+            stats=json.dumps(_DEFAULT_SITE_SETTINGS["stats"], ensure_ascii=False),
+            cta=json.dumps(_DEFAULT_SITE_SETTINGS["cta"], ensure_ascii=False),
+            footer=json.dumps(_DEFAULT_SITE_SETTINGS["footer"], ensure_ascii=False),
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+    return row
+
+
+def _row_to_dict(row) -> dict:
+    import json
+    return {
+        "hero": json.loads(row.hero or "{}"),
+        "features": json.loads(row.features or "[]"),
+        "steps": json.loads(row.steps or "[]"),
+        "stats": json.loads(row.stats or "[]"),
+        "cta": json.loads(row.cta or "{}"),
+        "footer": json.loads(row.footer or "{}"),
+    }
+
+
+@router.get("/site-settings")
+def get_public_site_settings(db: Session = Depends(get_db)):
+    """Public endpoint — returns all landing content."""
+    row = _get_or_create_settings(db)
+    return _row_to_dict(row)
+
+
+@router.get("/admin/site-settings")
+def get_admin_site_settings(user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    row = _get_or_create_settings(db)
+    return _row_to_dict(row)
+
+
+class SiteSettingsRequest(BaseModel):
+    hero: dict | None = None
+    features: list | None = None
+    steps: list | None = None
+    stats: list | None = None
+    cta: dict | None = None
+    footer: dict | None = None
+
+
+@router.put("/admin/site-settings")
+def update_site_settings(body: SiteSettingsRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    import json
+    from app.models import SiteSettings
+    row = _get_or_create_settings(db)
+    if body.hero is not None:
+        row.hero = json.dumps(body.hero, ensure_ascii=False)
+    if body.features is not None:
+        row.features = json.dumps(body.features, ensure_ascii=False)
+    if body.steps is not None:
+        row.steps = json.dumps(body.steps, ensure_ascii=False)
+    if body.stats is not None:
+        row.stats = json.dumps(body.stats, ensure_ascii=False)
+    if body.cta is not None:
+        row.cta = json.dumps(body.cta, ensure_ascii=False)
+    if body.footer is not None:
+        row.footer = json.dumps(body.footer, ensure_ascii=False)
+    row.updated_at = __import__("datetime").datetime.utcnow()
+    db.commit()
+    return _row_to_dict(row)
+
+
 # ── Celery Tasks ──
 
 @router.get("/admin/celery")

@@ -190,6 +190,20 @@ class Patient(Base):
     questionnaires: Mapped[list["PatientQuestionnaire"]] = relationship(back_populates="patient")
 
 
+class SiteSettings(Base):
+    __tablename__ = "site_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # Single row with all landing content as JSON text fields
+    hero: Mapped[str] = mapped_column(Text, default="{}")        # {title, subtitle, badge, cta_primary, cta_secondary}
+    features: Mapped[str] = mapped_column(Text, default="[]")    # [{title, desc}, ...]
+    steps: Mapped[str] = mapped_column(Text, default="[]")       # [{num, title, desc}, ...]
+    stats: Mapped[str] = mapped_column(Text, default="[]")       # [{value, suffix, label}, ...]
+    cta: Mapped[str] = mapped_column(Text, default="{}")         # {title, subtitle, button}
+    footer: Mapped[str] = mapped_column(Text, default="{}")      # {company, inn, ogrnip, address, copyright}
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class Analysis(Base):
     __tablename__ = "analyses"
 

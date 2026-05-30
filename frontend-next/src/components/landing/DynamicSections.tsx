@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { ScanLine, BarChart3, FileText, Bell, Brush, ClipboardList } from "lucide-react";
 import { API_BASE } from "@/lib/utils";
-import { FadeUp, ScaleIn, PulsingBadge } from "@/components/landing/AnimatedSection";
+import { FadeUp, ScaleIn, PulsingBadge, StepNumber, PulsingArrow, AnimatedCounter, FloatingParticles, GradientText, FeatureCard } from "@/components/landing/AnimatedSection";
 
 interface Plan {
   name: string;
@@ -173,5 +174,348 @@ export function DynamicAmbassadors() {
         </FadeUp>
       ))}
     </div>
+  );
+}
+
+// ─── Site Settings Types ────────────────────────────────────────────────────
+
+interface HeroContent {
+  badge?: string;
+  title?: string;
+  title_gradient?: string;
+  subtitle?: string;
+  cta_primary?: string;
+  cta_secondary?: string;
+}
+
+interface FeatureItem {
+  title: string;
+  desc: string;
+}
+
+interface StepItem {
+  num: string;
+  title: string;
+  desc: string;
+}
+
+interface StatItem {
+  value: number;
+  suffix: string;
+  label: string;
+}
+
+interface CTAContent {
+  title?: string;
+  title_line2?: string;
+  subtitle?: string;
+  button?: string;
+}
+
+interface FooterContent {
+  company?: string;
+  inn?: string;
+  ogrnip?: string;
+  address?: string;
+  copyright?: string;
+}
+
+interface SiteSettings {
+  hero: HeroContent;
+  features: FeatureItem[];
+  steps: StepItem[];
+  stats: StatItem[];
+  cta: CTAContent;
+  footer: FooterContent;
+}
+
+const DEFAULT_SETTINGS: SiteSettings = {
+  hero: {
+    badge: "Используют 50+ стоматологий",
+    title: "AI-анализ гигиены",
+    title_gradient: "полости рта",
+    subtitle: "Загрузите фото зубов — нейросеть определит налёт, рассчитает индексы и подберёт средства гигиены за 30 секунд",
+    cta_primary: "Попробовать бесплатно",
+    cta_secondary: "Как это работает",
+  },
+  features: [
+    { title: "AI-анализ налёта", desc: "Нейросеть YOLOv8 определяет зоны налёта по фото с индикатором" },
+    { title: "5 индексов гигиены", desc: "Фёдорова-Володкиной, API Lange, OHI-S, Silness-Löe, PHP" },
+    { title: "PDF-отчёты", desc: "Профессиональные отчёты с QR-кодом для пациента" },
+    { title: "Telegram + Max", desc: "Автоматические напоминания пациентам о визитах" },
+    { title: "Ёршикограмма", desc: "Интерактивная карта межзубных промежутков" },
+    { title: "Пародонтограмма", desc: "Глубина карманов, кровоточивость, подвижность" },
+  ],
+  steps: [
+    { num: "01", title: "Загрузите фото", desc: "3 фотографии зубов с индикатором налёта" },
+    { num: "02", title: "AI анализирует", desc: "Нейросеть определяет налёт и рассчитывает индексы" },
+    { num: "03", title: "Получите отчёт", desc: "PDF с рекомендациями по средствам гигиены" },
+    { num: "04", title: "Отправьте пациенту", desc: "Через Telegram, Max или email — в один клик" },
+  ],
+  stats: [
+    { value: 5, suffix: "", label: "индексов гигиены" },
+    { value: 30, suffix: " сек", label: "на анализ" },
+    { value: 95, suffix: "%", label: "точность AI" },
+  ],
+  cta: {
+    title: "Начните анализировать",
+    title_line2: "уже сегодня",
+    subtitle: "Регистрация бесплатна. Первые 5 отчётов — в подарок.",
+    button: "Создать аккаунт",
+  },
+  footer: {
+    company: "ИП Коростелев Александр Андреевич",
+    inn: "312334497069",
+    ogrnip: "323508100020560",
+    address: "140002, Московская обл, г. Люберцы, ул. Кирова, д. 9, корп. 2",
+    copyright: "© 2026 Odonta Index AI",
+  },
+};
+
+// ─── Shared hook (module-level cache to avoid duplicate fetches) ────────────
+
+let _settingsCache: SiteSettings | null = null;
+let _settingsPromise: Promise<SiteSettings> | null = null;
+
+function fetchSiteSettings(): Promise<SiteSettings> {
+  if (_settingsCache) return Promise.resolve(_settingsCache);
+  if (_settingsPromise) return _settingsPromise;
+  _settingsPromise = fetch(`${API_BASE}/api/site-settings`)
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      const merged: SiteSettings = data ? {
+        hero: { ...DEFAULT_SETTINGS.hero, ...data.hero },
+        features: data.features?.length ? data.features : DEFAULT_SETTINGS.features,
+        steps: data.steps?.length ? data.steps : DEFAULT_SETTINGS.steps,
+        stats: data.stats?.length ? data.stats : DEFAULT_SETTINGS.stats,
+        cta: { ...DEFAULT_SETTINGS.cta, ...data.cta },
+        footer: { ...DEFAULT_SETTINGS.footer, ...data.footer },
+      } : DEFAULT_SETTINGS;
+      _settingsCache = merged;
+      return merged;
+    })
+    .catch(() => DEFAULT_SETTINGS);
+  return _settingsPromise;
+}
+
+function useSiteSettings() {
+  const [settings, setSettings] = useState<SiteSettings>(
+    _settingsCache ?? DEFAULT_SETTINGS
+  );
+
+  useEffect(() => {
+    if (_settingsCache) {
+      setSettings(_settingsCache);
+      return;
+    }
+    fetchSiteSettings().then(setSettings);
+  }, []);
+
+  return settings;
+}
+
+// ─── Feature icons & colors (fixed order) ──────────────────────────────────
+
+const FEATURE_ICONS = [ScanLine, BarChart3, FileText, Bell, Brush, ClipboardList];
+const FEATURE_COLORS = ["#0891b2", "#8b5cf6", "#f97316", "#10b981", "#ec4899", "#3b82f6"];
+
+// ─── Dynamic Hero ───────────────────────────────────────────────────────────
+
+export function DynamicHero() {
+  const { hero, stats } = useSiteSettings();
+
+  return (
+    <section className="relative pt-32 pb-20 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#f0fdfa] via-white to-white" />
+      <div className="absolute top-20 left-1/4 w-96 h-96 bg-[#0891b2]/5 rounded-full blur-[120px]" />
+      <div className="absolute top-40 right-1/4 w-72 h-72 bg-cyan-200/10 rounded-full blur-[100px]" />
+      <FloatingParticles />
+
+      <div className="relative mx-auto max-w-6xl px-6">
+        <FadeUp>
+          <div className="text-center max-w-3xl mx-auto">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#ecfeff] px-4 py-1.5 text-xs font-medium text-[#0891b2] mb-8">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#0891b2] animate-pulse" />
+              {hero.badge || DEFAULT_SETTINGS.hero.badge}
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.1]">
+              {hero.title || DEFAULT_SETTINGS.hero.title}
+              <br />
+              <GradientText>{hero.title_gradient || DEFAULT_SETTINGS.hero.title_gradient}</GradientText>
+            </h1>
+
+            <p className="mt-6 text-lg text-gray-500 max-w-xl mx-auto leading-relaxed">
+              {hero.subtitle || DEFAULT_SETTINGS.hero.subtitle}
+            </p>
+
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/register"
+                className="rounded-2xl bg-[#0891b2] px-8 py-4 text-base font-semibold text-white shadow-xl shadow-[#0891b2]/25 hover:bg-[#0e7490] hover:shadow-[#0891b2]/35 transition-all">
+                {hero.cta_primary || DEFAULT_SETTINGS.hero.cta_primary}
+              </Link>
+              <a href="#how"
+                className="rounded-2xl border border-gray-200 px-8 py-4 text-base font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                {hero.cta_secondary || DEFAULT_SETTINGS.hero.cta_secondary}
+              </a>
+            </div>
+          </div>
+        </FadeUp>
+
+        <FadeUp delay={0.3}>
+          <div className="mt-20 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-3xl font-bold text-[#0891b2]">
+                  <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                </div>
+                <div className="mt-1 text-xs text-gray-400">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+  );
+}
+
+// ─── Dynamic Features ───────────────────────────────────────────────────────
+
+export function DynamicFeatures() {
+  const { features } = useSiteSettings();
+
+  return (
+    <section id="features" className="py-24 bg-[#f8fafb]">
+      <div className="mx-auto max-w-6xl px-6">
+        <FadeUp>
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0891b2] mb-3">Возможности</p>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
+              Всё для стоматолога-гигиениста
+            </h2>
+          </div>
+        </FadeUp>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {features.map((f, i) => {
+            const Icon = FEATURE_ICONS[i % FEATURE_ICONS.length];
+            const color = FEATURE_COLORS[i % FEATURE_COLORS.length];
+            return (
+              <FeatureCard key={i} delay={i * 0.08}>
+                <div className="group rounded-2xl bg-white p-7 border border-gray-100">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: color + "12" }}>
+                    <Icon className="h-6 w-6" style={{ color }} />
+                  </div>
+                  <h3 className="text-base font-bold text-gray-900 mb-2">{f.title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
+                </div>
+              </FeatureCard>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Dynamic Steps ──────────────────────────────────────────────────────────
+
+export function DynamicSteps() {
+  const { steps } = useSiteSettings();
+
+  return (
+    <section id="how" className="py-24">
+      <div className="mx-auto max-w-6xl px-6">
+        <FadeUp>
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0891b2] mb-3">Процесс</p>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
+              4 шага к результату
+            </h2>
+          </div>
+        </FadeUp>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {steps.map((step, i) => (
+            <FadeUp key={i} delay={i * 0.15}>
+              <div className="relative">
+                <StepNumber num={step.num} delay={i * 0.15} />
+                <h3 className="text-lg font-bold text-gray-900 mb-2 mt-3">{step.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+                {i < steps.length - 1 && <PulsingArrow />}
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Dynamic CTA ────────────────────────────────────────────────────────────
+
+export function DynamicCTA() {
+  const { cta } = useSiteSettings();
+
+  return (
+    <section className="py-20">
+      <FadeUp>
+        <div className="mx-auto max-w-4xl px-6">
+          <div className="rounded-3xl bg-gradient-to-br from-[#0891b2] via-[#0e7490] to-[#155e75] p-12 sm:p-16 text-center text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+            <div className="relative">
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                {cta.title || DEFAULT_SETTINGS.cta.title}<br />
+                {cta.title_line2 || DEFAULT_SETTINGS.cta.title_line2}
+              </h2>
+              <p className="mt-4 text-white/70 max-w-md mx-auto">
+                {cta.subtitle || DEFAULT_SETTINGS.cta.subtitle}
+              </p>
+              <Link href="/register"
+                className="mt-8 inline-block rounded-2xl bg-white px-10 py-4 text-base font-bold text-[#0891b2] shadow-xl hover:shadow-2xl transition-all">
+                {cta.button || DEFAULT_SETTINGS.cta.button}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </FadeUp>
+    </section>
+  );
+}
+
+// ─── Dynamic Footer ─────────────────────────────────────────────────────────
+
+export function DynamicFooter() {
+  const { footer } = useSiteSettings();
+
+  return (
+    <footer className="border-t border-gray-100 py-12">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="Odonta Index AI" className="h-14" />
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-400">
+            <Link href="/privacy" className="hover:text-[#0891b2] transition-colors">Политика обработки ПД</Link>
+            <Link href="/terms" className="hover:text-[#0891b2] transition-colors">Пользовательское соглашение</Link>
+            <Link href="/consent" className="hover:text-[#0891b2] transition-colors">Согласие на обработку ПД</Link>
+          </div>
+        </div>
+        <div className="mt-6 text-center text-[11px] text-gray-300">
+          <p>
+            {footer.company || DEFAULT_SETTINGS.footer.company}
+            {footer.inn ? ` · ИНН: ${footer.inn}` : ""}
+            {footer.ogrnip ? ` · ОГРНИП: ${footer.ogrnip}` : ""}
+          </p>
+          {footer.address && <p className="mt-1">{footer.address}</p>}
+          <p className="mt-2">
+            {footer.copyright || DEFAULT_SETTINGS.footer.copyright}
+            {" · "}
+            <a href="https://kwork.ru/user/pyaidev" target="_blank" className="hover:text-[#0891b2]">pyaidev</a>
+          </p>
+        </div>
+      </div>
+    </footer>
   );
 }
