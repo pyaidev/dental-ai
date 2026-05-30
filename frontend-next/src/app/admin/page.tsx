@@ -58,7 +58,7 @@ interface Review {
   stars: number;
 }
 
-type TabKey = "overview" | "users" | "transactions" | "reviews";
+type TabKey = "overview" | "users" | "transactions" | "reviews" | "plans" | "celery";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -427,7 +427,9 @@ export default function AdminPage() {
     { key: "overview", label: "Обзор", icon: LayoutDashboard },
     { key: "users", label: "Пользователи", icon: Users },
     { key: "transactions", label: "Транзакции", icon: CreditCard },
+    { key: "plans", label: "Тарифы", icon: Package },
     { key: "reviews", label: "Отзывы", icon: MessageSquare },
+    { key: "celery", label: "Задачи", icon: Activity },
   ];
 
   return (
@@ -962,6 +964,15 @@ export default function AdminPage() {
               )}
             </AnimatePresence>
           )}
+          {/* ─── Plans Tab ─── */}
+          {tab === "plans" && (
+            <PlansManager token={token} />
+          )}
+
+          {/* ─── Celery Tab ─── */}
+          {tab === "celery" && (
+            <CeleryMonitor token={token} />
+          )}
         </div>
       </div>
 
@@ -984,6 +995,195 @@ export default function AdminPage() {
           />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Plans Manager ──────────────────────────────────────────────────────────
+
+function PlansManager({ token }: { token: string | null }) {
+  const [plans, setPlans] = useState<Record<string, { name: string; price: number; reports_limit: number; features: string[]; permissions: string[] }>>({});
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editPrice, setEditPrice] = useState(0);
+  const [editReports, setEditReports] = useState(0);
+  const [editFeatures, setEditFeatures] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/admin/plans`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => setPlans(d.plans || {})).catch(() => {});
+  }, [token]);
+
+  const startEdit = (key: string) => {
+    const p = plans[key];
+    setEditing(key);
+    setEditPrice(p.price);
+    setEditReports(p.reports_limit);
+    setEditFeatures(p.features.join("\n"));
+  };
+
+  const handleSave = async () => {
+    if (!editing) return;
+    setSaving(true);
+    const resp = await fetch(`${API_BASE}/api/admin/plans/${editing}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ price: editPrice, reports_limit: editReports, features: editFeatures.split("\n").filter(Boolean) }),
+    });
+    if (resp.ok) {
+      setPlans({ ...plans, [editing]: { ...plans[editing], price: editPrice, reports_limit: editReports, features: editFeatures.split("\n").filter(Boolean) } });
+      setEditing(null);
+      setMsg("Тариф обновлён!");
+      setTimeout(() => setMsg(""), 3000);
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold">Управление тарифами</h2>
+        {msg && <span className="text-sm text-green-600 font-medium">{msg}</span>}
+      </div>
+      <p className="text-xs text-gray-400">Изменения применяются мгновенно для всех новых подписок. Существующие подписки не затрагиваются.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {Object.entries(plans).map(([key, plan]) => (
+          <motion.div key={key} layout
+            className={`rounded-2xl border p-5 transition-all ${editing === key ? "border-primary bg-primary/5 shadow-lg" : "border-gray-200 bg-white hover:shadow-md"}`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-sm">{plan.name}</h3>
+              {editing !== key && (
+                <button onClick={() => startEdit(key)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                  <Edit3 className="h-3 w-3" /> Изменить
+                </button>
+              )}
+            </div>
+            {editing === key ? (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-500">Цена (₽/мес)</label>
+                  <input type="number" value={editPrice} onChange={e => setEditPrice(Number(e.target.value))}
+                    className="w-full rounded-lg border px-3 py-2 text-sm mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Лимит отчётов</label>
+                  <input type="number" value={editReports} onChange={e => setEditReports(Number(e.target.value))}
+                    className="w-full rounded-lg border px-3 py-2 text-sm mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Функции (по одной на строку)</label>
+                  <textarea value={editFeatures} onChange={e => setEditFeatures(e.target.value)} rows={4}
+                    className="w-full rounded-lg border px-3 py-2 text-sm mt-1 resize-none" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={handleSave} disabled={saving}
+                    className="flex-1 rounded-lg bg-primary py-2 text-sm font-semibold text-white">
+                    {saving ? "..." : "Сохранить"}
+                  </button>
+                  <button onClick={() => setEditing(null)} className="rounded-lg border px-4 py-2 text-sm text-gray-500">Отмена</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold mb-2">{plan.price === 0 ? "Бесплатно" : `${plan.price.toLocaleString()} ₽`}</div>
+                <div className="text-xs text-gray-400 mb-3">{plan.reports_limit} отчётов</div>
+                <ul className="space-y-1">
+                  {plan.features.map((f, i) => (
+                    <li key={i} className="text-xs text-gray-600 flex items-center gap-1.5">
+                      <CheckCircle className="h-3 w-3 text-green-500 shrink-0" /> {f}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Celery Monitor ─────────────────────────────────────────────────────────
+
+function CeleryMonitor({ token }: { token: string | null }) {
+  const [data, setData] = useState<{ status: string; workers: string[]; active: { id: string; name: string; worker: string }[]; scheduled: { name: string; eta: string; worker: string }[]; queue_length: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    fetch(`${API_BASE}/api/admin/celery`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(setData).catch(() => {}).finally(() => setLoading(false));
+  }, [token]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold">Celery задачи</h2>
+        <button onClick={refresh} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Обновить
+        </button>
+      </div>
+      {data && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className={`rounded-xl p-4 border ${data.status === "connected" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+              <p className="text-xs text-gray-500">Статус</p>
+              <p className={`text-sm font-bold ${data.status === "connected" ? "text-green-700" : "text-red-700"}`}>{data.status}</p>
+            </div>
+            <div className="rounded-xl p-4 border bg-white border-gray-200">
+              <p className="text-xs text-gray-500">Воркеры</p>
+              <p className="text-sm font-bold">{data.workers.length}</p>
+            </div>
+            <div className="rounded-xl p-4 border bg-white border-gray-200">
+              <p className="text-xs text-gray-500">Активные задачи</p>
+              <p className="text-sm font-bold">{data.active.length}</p>
+            </div>
+            <div className="rounded-xl p-4 border bg-white border-gray-200">
+              <p className="text-xs text-gray-500">Очередь</p>
+              <p className="text-sm font-bold">{data.queue_length}</p>
+            </div>
+          </div>
+
+          {data.workers.length > 0 && (
+            <div className="rounded-xl border bg-white p-4">
+              <h3 className="text-sm font-semibold mb-2">Воркеры</h3>
+              {data.workers.map(w => (
+                <div key={w} className="flex items-center gap-2 text-xs py-1">
+                  <span className="h-2 w-2 rounded-full bg-green-500" /> {w}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {data.active.length > 0 && (
+            <div className="rounded-xl border bg-white p-4">
+              <h3 className="text-sm font-semibold mb-2">Активные задачи</h3>
+              {data.active.map(t => (
+                <div key={t.id} className="flex items-center justify-between text-xs py-1 border-b last:border-0">
+                  <span className="font-mono">{t.name}</span>
+                  <span className="text-gray-400">{t.worker}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {data.scheduled.length > 0 && (
+            <div className="rounded-xl border bg-white p-4">
+              <h3 className="text-sm font-semibold mb-2">Запланированные</h3>
+              {data.scheduled.map((t, i) => (
+                <div key={i} className="flex items-center justify-between text-xs py-1 border-b last:border-0">
+                  <span className="font-mono">{t.name}</span>
+                  <span className="text-gray-400">{t.eta}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

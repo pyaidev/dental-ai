@@ -246,3 +246,58 @@ def delete_review(review_id: int, user: AdminUser = Depends(require_admin), db: 
     db.delete(review)
     db.commit()
     return {"ok": True}
+
+
+# ── Plans Management ──
+
+@router.get("/admin/plans")
+def get_admin_plans(user: AdminUser = Depends(require_admin)):
+    from app.routers.subscriptions import PLANS
+    return {"plans": PLANS}
+
+
+class PlanUpdateRequest(BaseModel):
+    price: int
+    reports_limit: int
+    features: list[str]
+
+@router.put("/admin/plans/{plan_key}")
+def update_plan(plan_key: str, body: PlanUpdateRequest, user: AdminUser = Depends(require_admin)):
+    from app.routers.subscriptions import PLANS
+    if plan_key not in PLANS:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    PLANS[plan_key]["price"] = body.price
+    PLANS[plan_key]["reports_limit"] = body.reports_limit
+    PLANS[plan_key]["features"] = body.features
+    return {"ok": True, "plan": PLANS[plan_key]}
+
+
+# ── Celery Tasks ──
+
+@router.get("/admin/celery")
+def get_celery_status(user: AdminUser = Depends(require_admin)):
+    result = {"status": "unknown", "workers": [], "scheduled": [], "active": []}
+    try:
+        from app.celery_app import celery_app
+        inspect = celery_app.control.inspect(timeout=2)
+        active = inspect.active() or {}
+        scheduled = inspect.scheduled() or {}
+        registered = inspect.registered() or {}
+        result["status"] = "connected"
+        for worker, tasks in active.items():
+            result["workers"].append(worker)
+            for t in tasks:
+                result["active"].append({"id": t["id"], "name": t["name"], "worker": worker})
+        for worker, tasks in scheduled.items():
+            for t in tasks:
+                result["scheduled"].append({"name": t.get("request", {}).get("name", "?"), "eta": t.get("eta"), "worker": worker})
+    except Exception as e:
+        result["status"] = f"error: {str(e)[:100]}"
+    # Redis queue length
+    try:
+        import redis
+        r = redis.Redis()
+        result["queue_length"] = r.llen("celery")
+    except:
+        result["queue_length"] = 0
+    return result
