@@ -144,6 +144,36 @@ def admin_system(user: AdminUser = Depends(require_admin)):
     return health
 
 
+# ── User Detail ──
+
+@router.get("/admin/users/{user_id}")
+def admin_user_detail(user_id: int, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    target = db.query(AdminUser).filter(AdminUser.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404)
+
+    patients_count = db.query(func.count(Patient.id)).filter(Patient.user_id == user_id).scalar() or 0
+    analyses_count = db.query(func.count(Analysis.id)).join(Patient).filter(Patient.user_id == user_id).scalar() or 0
+
+    subs = db.query(Subscription).filter(Subscription.user_id == user_id).order_by(Subscription.created_at.desc()).all()
+    sub_list = [{"id": s.id, "plan": s.plan, "status": s.status, "reports_used": s.reports_used, "reports_total": s.reports_total, "created_at": s.created_at.isoformat() if s.created_at else None} for s in subs]
+
+    recent = db.query(Analysis).join(Patient).filter(Patient.user_id == user_id).order_by(Analysis.created_at.desc()).limit(5).all()
+    recent_list = []
+    for a in recent:
+        p = db.query(Patient).filter(Patient.id == a.patient_id).first()
+        recent_list.append({"id": a.id, "patient": p.fio if p else "—", "plaque": a.plaque_pct_overall, "date": a.created_at.strftime("%d.%m.%Y") if a.created_at else ""})
+
+    return {
+        "id": target.id, "username": target.username, "fio": target.fio, "role": target.role,
+        "is_verified": target.is_verified,
+        "created_at": target.created_at.isoformat() if target.created_at else None,
+        "last_login": target.last_login.isoformat() if target.last_login else None,
+        "patients_count": patients_count, "analyses_count": analyses_count,
+        "subscriptions": sub_list, "recent_analyses": recent_list,
+    }
+
+
 # ── User Management ──
 
 @router.post("/admin/users/{user_id}/block")

@@ -298,6 +298,8 @@ export default function AdminPage() {
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState<"all" | "doctor" | "admin">("all");
   const [assignUser, setAssignUser] = useState<UserItem | null>(null);
+  const [detailUser, setDetailUser] = useState<UserItem | null>(null);
+  const [detailData, setDetailData] = useState<{patients_count:number;analyses_count:number;subscriptions:{plan:string;status:string;reports_used:number;reports_total:number;created_at:string}[];recent_analyses:{id:number;patient:string;plaque:number;date:string}[]} | null>(null);
 
   // Transactions tab
   const [txStatusFilter, setTxStatusFilter] = useState<"all" | "active" | "expired" | "cancelled">("all");
@@ -461,10 +463,6 @@ export default function AdminPage() {
         </nav>
 
         <div className="p-3 border-t border-white/10 space-y-1">
-          <a href="/dashboard" target="_blank"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs text-white/40 hover:text-white hover:bg-white/5 transition-all">
-            <ExternalLink className="h-3.5 w-3.5" /> Основной сайт
-          </a>
           <button
             onClick={() => { localStorage.removeItem("dental_token"); router.push("/login"); }}
             className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs text-white/40 hover:text-red-400 hover:bg-red-400/5 transition-all">
@@ -624,7 +622,7 @@ export default function AdminPage() {
                         .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
                         .slice(0, 8)
                         .map(u => (
-                          <div key={u.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors">
+                          <div key={u.id} onClick={() => { setDetailUser(u); setDetailData(null); fetch(`${API_BASE}/api/admin/users/${u.id}`, { headers: { Authorization: `Bearer ${token}` } }).then(r=>r.json()).then(setDetailData).catch(()=>{}); }} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
                             <div className="flex items-center gap-3">
                               <div className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold shrink-0 ${
                                 u.role === "admin" ? "bg-red-100 text-red-600" : "bg-cyan-100 text-cyan-700"
@@ -991,6 +989,71 @@ export default function AdminPage() {
             onClose={() => setEditReview(null)}
             onSave={handleSaveReview}
           />
+        )}
+        {detailUser && (
+          <motion.div key="detail-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setDetailUser(null)}>
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              onClick={e => e.stopPropagation()} className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold">{detailUser.fio || detailUser.username}</h3>
+                  <p className="text-xs text-gray-400">@{detailUser.username}</p>
+                </div>
+                <button onClick={() => setDetailUser(null)}><X className="h-5 w-5 text-gray-400" /></button>
+              </div>
+              {!detailData ? (
+                <div className="flex justify-center py-8"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-xl bg-cyan-50 p-3 text-center">
+                      <p className="text-xl font-bold text-cyan-700">{detailData.patients_count}</p>
+                      <p className="text-[10px] text-cyan-500">Пациентов</p>
+                    </div>
+                    <div className="rounded-xl bg-purple-50 p-3 text-center">
+                      <p className="text-xl font-bold text-purple-700">{detailData.analyses_count}</p>
+                      <p className="text-[10px] text-purple-500">Анализов</p>
+                    </div>
+                    <div className="rounded-xl bg-green-50 p-3 text-center">
+                      <p className="text-xl font-bold text-green-700">{detailData.subscriptions.filter(s => s.status === "active").length}</p>
+                      <p className="text-[10px] text-green-500">Акт. подписок</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2">Подписки</h4>
+                    {detailData.subscriptions.length === 0 ? <p className="text-xs text-gray-400">Нет подписок</p> : (
+                      <div className="space-y-1">
+                        {detailData.subscriptions.map((s, i) => (
+                          <div key={i} className="flex items-center justify-between text-xs py-1.5 border-b last:border-0">
+                            <span className={`font-medium ${s.status === "active" ? "text-green-600" : "text-gray-400"}`}>{s.plan}</span>
+                            <span>{s.reports_used}/{s.reports_total}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] ${s.status === "active" ? "bg-green-100 text-green-700" : s.status === "expired" ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-500"}`}>{s.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2">Последние анализы</h4>
+                    {detailData.recent_analyses.length === 0 ? <p className="text-xs text-gray-400">Нет анализов</p> : (
+                      <div className="space-y-1">
+                        {detailData.recent_analyses.map(a => (
+                          <div key={a.id} className="flex items-center justify-between text-xs py-1.5 border-b last:border-0">
+                            <span>{a.patient}</span>
+                            <span className="font-bold">{a.plaque}%</span>
+                            <span className="text-gray-400">{a.date}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
         )}
         {assignUser && (
           <AssignPlanModal
