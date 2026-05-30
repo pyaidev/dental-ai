@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta, UTC
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -171,7 +172,6 @@ class AssignPlanRequest(BaseModel):
     plan: str
     reports: int = 100
 
-from pydantic import BaseModel
 
 @router.post("/admin/users/{user_id}/assign-plan")
 def assign_plan(user_id: int, body: AssignPlanRequest, user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
