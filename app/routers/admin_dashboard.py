@@ -200,6 +200,14 @@ def assign_plan(user_id: int, body: AssignPlanRequest, user: AdminUser = Depends
 
 # ── Reviews CRUD ──
 
+@router.get("/reviews")
+def get_public_reviews(db: Session = Depends(get_db)):
+    """Public endpoint for landing page reviews."""
+    from app.models import Review
+    reviews = db.query(Review).order_by(Review.id.desc()).all()
+    return [{"id": r.id, "name": r.name, "role": r.role, "quote": r.quote, "stars": r.stars} for r in reviews]
+
+
 @router.get("/admin/reviews")
 def get_reviews(user: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
     from app.models import Review
