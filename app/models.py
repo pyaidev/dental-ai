@@ -203,6 +203,7 @@ class SiteSettings(Base):
     stats: Mapped[str] = mapped_column(Text, default="[]")       # [{value, suffix, label}, ...]
     cta: Mapped[str] = mapped_column(Text, default="{}")         # {title, subtitle, button}
     footer: Mapped[str] = mapped_column(Text, default="{}")      # {company, inn, ogrnip, address, copyright}
+    seo: Mapped[str] = mapped_column(Text, default="{}")         # {meta_title, meta_description, meta_keywords, og_title, og_description, og_image, yandex_verification, google_verification}
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 

@@ -450,6 +450,16 @@ _DEFAULT_SITE_SETTINGS = {
         "address": "140002, Московская обл, г. Люберцы, ул. Кирова, д. 9, корп. 2",
         "copyright": "© 2026 Odonta Index AI",
     },
+    "seo": {
+        "meta_title": "Odonta Index AI — AI-анализ гигиены полости рта для стоматологов",
+        "meta_description": "Сервис AI-анализа зубного налёта по фотографиям. Автоматический расчёт индексов гигиены (Фёдорова-Володкиной, OHI-S, API, Silness-Löe, PHP), PDF-отчёты, рекомендации по средствам гигиены. Для стоматологов и гигиенистов.",
+        "meta_keywords": "анализ зубного налёта,индексы гигиены полости рта,AI стоматология,Odonta Index,Фёдорова-Володкиной,OHI-S,стоматологический отчёт,гигиенист стоматологический,анализ налёта по фото,индекс гигиены онлайн,пародонтограмма онлайн,ёршикограмма,PDF отчёт стоматолог,AI dental plaque analysis,dental hygiene index calculator",
+        "og_title": "Odonta Index AI — AI-анализ гигиены полости рта",
+        "og_description": "Загрузите 3 фото зубов с индикатором налёта — нейросеть рассчитает индексы гигиены и сформирует PDF-отчёт с рекомендациями за 30 секунд.",
+        "og_image": "/og-image.png",
+        "yandex_verification": "yandex-verification-code",
+        "google_verification": "",
+    },
 }
 
 
@@ -465,6 +475,7 @@ def _get_or_create_settings(db: Session):
             stats=json.dumps(_DEFAULT_SITE_SETTINGS["stats"], ensure_ascii=False),
             cta=json.dumps(_DEFAULT_SITE_SETTINGS["cta"], ensure_ascii=False),
             footer=json.dumps(_DEFAULT_SITE_SETTINGS["footer"], ensure_ascii=False),
+            seo=json.dumps(_DEFAULT_SITE_SETTINGS["seo"], ensure_ascii=False),
         )
         db.add(row)
         db.commit()
@@ -481,6 +492,7 @@ def _row_to_dict(row) -> dict:
         "stats": json.loads(row.stats or "[]"),
         "cta": json.loads(row.cta or "{}"),
         "footer": json.loads(row.footer or "{}"),
+        "seo": json.loads(getattr(row, "seo", None) or "{}"),
     }
 
 
@@ -504,6 +516,7 @@ class SiteSettingsRequest(BaseModel):
     stats: list | None = None
     cta: dict | None = None
     footer: dict | None = None
+    seo: dict | None = None
 
 
 @router.put("/admin/site-settings")
@@ -523,9 +536,23 @@ def update_site_settings(body: SiteSettingsRequest, user: AdminUser = Depends(re
         row.cta = json.dumps(body.cta, ensure_ascii=False)
     if body.footer is not None:
         row.footer = json.dumps(body.footer, ensure_ascii=False)
+    if body.seo is not None:
+        row.seo = json.dumps(body.seo, ensure_ascii=False)
     row.updated_at = __import__("datetime").datetime.utcnow()
     db.commit()
     return _row_to_dict(row)
+
+
+@router.get("/seo")
+def get_public_seo(db: Session = Depends(get_db)):
+    """Public endpoint — returns SEO settings for server-side metadata rendering."""
+    import json
+    row = _get_or_create_settings(db)
+    seo_raw = getattr(row, "seo", None) or "{}"
+    seo = json.loads(seo_raw)
+    # Fill in defaults for any missing keys
+    defaults = _DEFAULT_SITE_SETTINGS["seo"]
+    return {k: seo.get(k, defaults.get(k, "")) for k in defaults}
 
 
 # ── Celery Tasks ──

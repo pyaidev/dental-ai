@@ -9,7 +9,7 @@ import {
   LogOut, LayoutDashboard, ScanLine, BarChart3, Settings, ExternalLink,
   Star, Trash2, Edit3, Plus, X, ChevronDown, Lock, Unlock,
   Calendar, Clock, RefreshCw, Eye, MessageSquare, Filter,
-  UserCheck, UserX, Search, Save, Package, Type, ChevronUp
+  UserCheck, UserX, Search, Save, Package, Type, ChevronUp, Globe
 } from "lucide-react";
 import { API_BASE } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ interface Review {
   order?: number;
 }
 
-type TabKey = "overview" | "users" | "transactions" | "reviews" | "ambassadors" | "plans" | "celery" | "content";
+type TabKey = "overview" | "users" | "transactions" | "reviews" | "ambassadors" | "plans" | "celery" | "content" | "seo";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -450,6 +450,7 @@ export default function AdminPage() {
     { key: "ambassadors", label: "Амбассадоры", icon: Star },
     { key: "celery", label: "Задачи", icon: Activity },
     { key: "content", label: "Контент", icon: Type },
+    { key: "seo", label: "SEO", icon: Globe },
   ];
 
   return (
@@ -1010,6 +1011,11 @@ export default function AdminPage() {
           {/* ─── Content Tab ─── */}
           {tab === "content" && (
             <ContentManager token={token} />
+          )}
+
+          {/* ─── SEO Tab ─── */}
+          {tab === "seo" && (
+            <SEOManager token={token} />
           )}
         </div>
       </div>
@@ -1795,6 +1801,266 @@ function ContentManager({ token }: { token: string | null }) {
       <div className="flex items-center gap-2 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-400">
         <ExternalLink className="h-3.5 w-3.5 shrink-0" />
         После сохранения изменения появятся на лендинге при следующей загрузке страницы.
+        <a href="/" target="_blank" className="ml-auto text-cyan-600 hover:underline whitespace-nowrap">
+          Открыть лендинг →
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ─── SEO Manager ─────────────────────────────────────────────────────────────
+
+interface SeoData {
+  meta_title: string;
+  meta_description: string;
+  meta_keywords: string;
+  og_title: string;
+  og_description: string;
+  og_image: string;
+  yandex_verification: string;
+  google_verification: string;
+}
+
+const EMPTY_SEO: SeoData = {
+  meta_title: "",
+  meta_description: "",
+  meta_keywords: "",
+  og_title: "",
+  og_description: "",
+  og_image: "/og-image.png",
+  yandex_verification: "",
+  google_verification: "",
+};
+
+function SEOManager({ token }: { token: string | null }) {
+  const [seo, setSeo] = useState<SeoData>(EMPTY_SEO);
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/admin/site-settings`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.seo) {
+          setSeo({ ...EMPTY_SEO, ...data.seo });
+        }
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, [token]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMsg(null);
+    try {
+      const resp = await fetch(`${API_BASE}/api/admin/site-settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ seo }),
+      });
+      if (resp.ok) {
+        setMsg({ type: "success", text: "SEO настройки сохранены!" });
+        setTimeout(() => setMsg(null), 3000);
+      } else {
+        setMsg({ type: "error", text: "Ошибка при сохранении" });
+      }
+    } catch {
+      setMsg({ type: "error", text: "Ошибка сети" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputCls = "w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 bg-white";
+  const textareaCls = `${inputCls} resize-none`;
+  const labelCls = "block text-xs font-medium text-slate-600 mb-1";
+
+  // Count characters for description
+  const descLen = seo.meta_description.length;
+  const ogDescLen = seo.og_description.length;
+
+  if (!loaded) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="h-8 w-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-slate-500">Управление SEO-настройками сайта</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {msg && (
+            <span className={`text-sm font-medium ${msg.type === "success" ? "text-emerald-600" : "text-red-500"}`}>
+              {msg.text}
+            </span>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50 shadow-sm"
+          >
+            <Save className="h-4 w-4" />
+            {saving ? "Сохранение..." : "Сохранить"}
+          </button>
+        </div>
+      </div>
+
+      {/* Google Search Preview */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-6 space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Предпросмотр в Google</p>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 max-w-xl">
+          <p className="text-[13px] text-slate-400 mb-0.5">https://odontaindex.ru</p>
+          <p className="text-[18px] text-blue-700 font-medium leading-snug hover:underline cursor-default line-clamp-1">
+            {seo.meta_title || "Заголовок страницы"}
+          </p>
+          <p className="text-[13px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">
+            {seo.meta_description || "Описание страницы появится здесь..."}
+          </p>
+        </div>
+      </div>
+
+      {/* Main meta */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-6 space-y-4">
+        <h3 className="text-base font-bold text-slate-800">Основные мета-теги</h3>
+
+        <div>
+          <label className={labelCls}>Meta Title <span className="text-slate-400 font-normal">(рекомендуется 50–60 символов)</span></label>
+          <input
+            className={inputCls}
+            value={seo.meta_title}
+            placeholder="Odonta Index AI — AI-анализ гигиены полости рта для стоматологов"
+            onChange={e => setSeo(s => ({ ...s, meta_title: e.target.value }))}
+          />
+          <p className={`mt-1 text-right text-[11px] ${seo.meta_title.length > 60 ? "text-amber-500" : "text-slate-400"}`}>
+            {seo.meta_title.length} / 60
+          </p>
+        </div>
+
+        <div>
+          <label className={labelCls}>
+            Meta Description <span className="text-slate-400 font-normal">(рекомендуется 120–160 символов)</span>
+          </label>
+          <textarea
+            className={textareaCls}
+            rows={3}
+            value={seo.meta_description}
+            placeholder="Сервис AI-анализа зубного налёта по фотографиям..."
+            onChange={e => setSeo(s => ({ ...s, meta_description: e.target.value }))}
+          />
+          <p className={`mt-1 text-right text-[11px] ${descLen > 160 ? "text-amber-500" : descLen < 120 && descLen > 0 ? "text-amber-400" : "text-slate-400"}`}>
+            {descLen} / 160
+          </p>
+        </div>
+
+        <div>
+          <label className={labelCls}>Meta Keywords <span className="text-slate-400 font-normal">(через запятую)</span></label>
+          <textarea
+            className={textareaCls}
+            rows={3}
+            value={seo.meta_keywords}
+            placeholder="анализ зубного налёта,индексы гигиены полости рта,AI стоматология..."
+            onChange={e => setSeo(s => ({ ...s, meta_keywords: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      {/* Open Graph */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-6 space-y-4">
+        <h3 className="text-base font-bold text-slate-800">Open Graph (соцсети)</h3>
+
+        <div>
+          <label className={labelCls}>OG Title</label>
+          <input
+            className={inputCls}
+            value={seo.og_title}
+            placeholder="Odonta Index AI — AI-анализ гигиены полости рта"
+            onChange={e => setSeo(s => ({ ...s, og_title: e.target.value }))}
+          />
+        </div>
+
+        <div>
+          <label className={labelCls}>
+            OG Description <span className="text-slate-400 font-normal">(рекомендуется до 200 символов)</span>
+          </label>
+          <textarea
+            className={textareaCls}
+            rows={3}
+            value={seo.og_description}
+            placeholder="Загрузите 3 фото зубов с индикатором налёта — нейросеть рассчитает индексы гигиены..."
+            onChange={e => setSeo(s => ({ ...s, og_description: e.target.value }))}
+          />
+          <p className={`mt-1 text-right text-[11px] ${ogDescLen > 200 ? "text-amber-500" : "text-slate-400"}`}>
+            {ogDescLen} / 200
+          </p>
+        </div>
+
+        <div>
+          <label className={labelCls}>OG Image URL <span className="text-slate-400 font-normal">(рекомендуется 1200×630px)</span></label>
+          <input
+            className={inputCls}
+            value={seo.og_image}
+            placeholder="/og-image.png"
+            onChange={e => setSeo(s => ({ ...s, og_image: e.target.value }))}
+          />
+          {seo.og_image && (
+            <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 max-w-xs">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={seo.og_image}
+                alt="OG preview"
+                className="w-full h-auto object-cover"
+                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Verification codes */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-6 space-y-4">
+        <h3 className="text-base font-bold text-slate-800">Коды верификации</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Yandex Verification</label>
+            <input
+              className={inputCls}
+              value={seo.yandex_verification}
+              placeholder="yandex-verification-code"
+              onChange={e => setSeo(s => ({ ...s, yandex_verification: e.target.value }))}
+            />
+            <p className="mt-1 text-[11px] text-slate-400">
+              Из Яндекс Вебмастер → Добавить сайт → HTML-метатег → значение content
+            </p>
+          </div>
+          <div>
+            <label className={labelCls}>Google Search Console</label>
+            <input
+              className={inputCls}
+              value={seo.google_verification}
+              placeholder="google-site-verification-code"
+              onChange={e => setSeo(s => ({ ...s, google_verification: e.target.value }))}
+            />
+            <p className="mt-1 text-[11px] text-slate-400">
+              Из Google Search Console → Добавить ресурс → HTML-метатег → значение content
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Info hint */}
+      <div className="flex items-center gap-2 rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-400">
+        <Globe className="h-3.5 w-3.5 shrink-0" />
+        SEO-данные применяются на лендинге. Изменения вступают в силу при следующем обходе страницы поисковиком.
         <a href="/" target="_blank" className="ml-auto text-cyan-600 hover:underline whitespace-nowrap">
           Открыть лендинг →
         </a>
